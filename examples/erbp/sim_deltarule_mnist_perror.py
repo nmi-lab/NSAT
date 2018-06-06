@@ -332,10 +332,10 @@ cfg_test.set_ext_events(ext_evts_data_test)
 #fname_test.syn_weights = fname.syn_weights
 
 print("################## Writing Parameters Files ##################")
-c_nsat_writer_train = nsat.C_NSATWriterMultithread(cfg_train, path='/tmp/erbp_mnist_train1/', prefix='')
+c_nsat_writer_train = nsat.C_NSATWriter(cfg_train, path='/tmp/erbp_mnist_train1/', prefix='')
 c_nsat_writer_train.write()
 
-c_nsat_writer_test = nsat.C_NSATWriterMultithread(cfg_test, path='/tmp/erbp_mnist_test1/', prefix='')
+c_nsat_writer_test = nsat.C_NSATWriter(cfg_test, path='/tmp/erbp_mnist_test1/', prefix='')
 c_nsat_writer_test.write()
 
 fname_train = c_nsat_writer_train.fname
