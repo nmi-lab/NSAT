@@ -27,7 +27,7 @@
 
 
 /* max function - For more details see nsat_math.c */
-inline unsigned long long max(int *x, int size) {
+inline int max(int *x, int size) {
     int i, tmp = x[0];
 
     for(i = 1; i < size; ++i) {

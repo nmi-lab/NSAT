@@ -45,7 +45,7 @@ if __name__ == '__main__':
     sim_ticks = 1000                # Simulation time
     N_CORES = 1                     # Number of cores
     N_NEURONS = [100]                 # Number of neurons per core
-    N_INPUTS = [101]                  # Number of inputs per core
+    N_INPUTS = [100]                  # Number of inputs per core
     N_STATES = [4]                  # Number of states pare core
     N_UNITS = N_INPUTS[0] + N_NEURONS[0]        # Total units
 
@@ -160,12 +160,6 @@ if __name__ == '__main__':
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_rSTDP')
     c_nsat_writer.write()
 
-    # Write Intel FPGA parameters hex files
-#    intel_fpga_writer = nsat.IntelFPGAWriter(cfg, path='.',
-#                                             prefix='test_rSTDP')
-#    intel_fpga_writer.write()
-#    intel_fpga_writer.write_globals()
-
     # Call the C NSAT
     print("Running C NSAT!")
     nsat.run_c_nsat(c_nsat_writer.fname)
@@ -175,11 +169,9 @@ if __name__ == '__main__':
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[core][0], states[core][1]
 
-    wt = c_nsat_reader.read_c_nsat_syn_evo()[0][0]
+    wt = c_nsat_reader.read_synaptic_weights_history()[0]
+    print(wt.shape)
     in_spikelist = SL
-    # out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
-    #                                sim_ticks=sim_ticks,
-    #                                id_list=[0])
     out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
@@ -198,7 +190,7 @@ if __name__ == '__main__':
         plt.axvline(t, color='g', alpha=.4)
     ax1.plot(states_core0[:-1, 0, 2], 'b', lw=3, label='$x_m$')
     ax1.set_ylabel('$x_m$')
-    ax1.get_yaxis().set_label_coords(-0.12,0.5)
+    ax1.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.setp(ax1.get_xticklabels(), visible=False)
     plt.axhline(0, color='b', alpha=.5, linewidth=3)
     plt.locator_params(axis='y', nbins=4)
@@ -207,17 +199,17 @@ if __name__ == '__main__':
     ax = fig.add_subplot(5, 1, i, sharex=ax1)
     for t in SL[0].spike_times:
         plt.axvline(t, color='k', alpha=.4)
-    ax.plot(wt[101][::2, 0], wt[101][::2, 4], 'r', lw=3)
+    ax.plot(wt[:, 101, 2], 'r', lw=3)
     ax.set_ylabel('$w$')
     ax.set_xlabel('Time Step')
-    ax.get_yaxis().set_label_coords(-0.12,0.5)
+    ax.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.locator_params(axis='y', nbins=4)
 
     i = 2
     ax = fig.add_subplot(5, 1, i, sharex=ax1)
     ax.plot(states_core0[:-1, 0, 0], 'b', lw=3, label='$V_m$')
     ax.set_ylabel('$V_m$')
-    ax.get_yaxis().set_label_coords(-0.12,0.5)
+    ax.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.setp(ax.get_xticklabels(), visible=False)
     plt.locator_params(axis='y', nbins=4)
 
@@ -225,20 +217,18 @@ if __name__ == '__main__':
     ax = fig.add_subplot(5, 1, i, sharex=ax1)
     ax.plot(states_core0[:-1, 0, 1], 'b', lw=3, label='$I_{syn}$')
     ax.set_ylabel('$I_{syn}$')
-    ax.get_yaxis().set_label_coords(-0.12,0.5)
+    ax.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.setp(ax.get_xticklabels(), visible=False)
     plt.locator_params(axis='y', nbins=4)
     for t in np.ceil(SL[0].spike_times):
-        plt.axvline(t, color='k',alpha=.4)
-
-
+        plt.axvline(t, color='k', alpha=.4)
 
     ax1 = fig.add_subplot(5, 1, 1, sharex=ax1)
-    out_spikelist.id_slice([0]).raster_plot(display=ax1, kwargs={'color':'b'})
-    out_spikelist.id_slice(list(range(1,30))).raster_plot(display=ax1, kwargs={'color':'k'})
+    out_spikelist.id_slice([0]).raster_plot(display=ax1, kwargs={'color': 'b'})
+    out_spikelist.id_slice(list(range(1, 30))).raster_plot(display=ax1,
+                                                           kwargs={'color': 'k'})
     ax1.set_xlabel('')
     plt.setp(ax1.get_xticklabels(), visible=False)
-    ax1.get_yaxis().set_label_coords(-0.12,0.5)
+    ax1.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.tight_layout()
     plt.show()
-

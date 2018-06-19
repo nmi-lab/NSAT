@@ -21,39 +21,9 @@
 
 #include "dtypes.h"
 
-/* Integers list node struct */
-typedef struct identity_list_s {
-    unsigned long long id;
-    struct identity_list_s *next;
-} id_list_node;
-
-
-/* Integers list struct */
-typedef struct list_ids_s {
-    struct identity_list_s *head;
-    int len;
-} list_id;
-
-
-/* Spike list node struct */
-typedef struct spike_list_s {
-    unsigned long long id;
-    unsigned long long t;
-    struct spike_list_s *next;
-} spk_list_node;
-
-
-/* Spike list struct */
-typedef struct list_spk_s {
-    struct spike_list_s *head;
-    struct spike_list_s *tail;
-    int len;
-} list_spk;
-
-
 /* Synaptic strength list node struct */
 typedef struct syn_list_s {
-    unsigned long long id;
+    int id;
     WTYPE *w_ptr;
     struct syn_list_s *next;
 } syn_list_node;
@@ -68,17 +38,9 @@ typedef struct list_syn_s {
 
 
 /* Spike list functions declarations */
-list_spk *alloc_list_spk(void);
 list_syn *alloc_list_syn(void);
-list_id *alloc_list_id(void);
-void push_spk(list_spk **, unsigned long long, unsigned long long);
-void push_back_spk(list_spk **, unsigned long long);
-void push_syn(list_syn **, unsigned long long, WTYPE *);
-void push_id(list_id **, unsigned long long);
-void destroy_list_spk(list_spk **);
+void push_syn(list_syn **, int, WTYPE *);
 void destroy_list_syn(list_syn **);
-void destroy_list_id(list_id **);
-void print_list_spk(list_spk *);
 void print_list_syn(list_syn *);
 
 #endif  /* LIST_H */

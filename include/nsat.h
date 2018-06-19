@@ -60,11 +60,15 @@
 #define handle_error_en(en, msg) \
        do { errno = en; perror(msg); exit(EXIT_FAILURE); } while (0)
 
+#define fread_test(res, lsize) {if (res != lsize) { \
+                                    printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET); \
+                                    printf("Read function failed!\n"); \
+                                    printf("Check file %s at line %d\n", __FILE__, __LINE__); \
+                                 } \
+                                }
 
 #define N_NSATGROUPS 8
 #define N_LRNGROUPS 8
-
-#define OLD 0
 
 #define XTHUP 32767
 #define XTHLOW -32768
@@ -94,8 +98,8 @@ struct nsat_parameters_s {
     int modg_state;
     int gate_low;
     int gate_upper;
-    unsigned int period;
-    unsigned int burn_in;
+    int period;
+    int burn_in;
     bool *is_xreset_on;
     bool is_flag_Xth;
 } __attribute__ ((aligned));
@@ -124,10 +128,10 @@ typedef struct learning_params_s learning_params;
 
 /* Simulation paremeters struct */
 struct global_pms_s {
-    unsigned long long ticks;
-    unsigned long long rng_init_state;
-    unsigned long long rng_init_seq;
-    unsigned int num_cores;
+    int ticks;
+    int rng_init_state;
+    int rng_init_seq;
+    int num_cores;
     int syn_precision;
     bool is_single_core;
     bool is_routing_on;
@@ -140,16 +144,16 @@ typedef struct global_pms_s global_params;
 
 /* Local parameters per core */
 struct cores_params_s {
-    list_id *ext_syn_rec_ids;
-    list_id *nsat_syn_rec_ids;
-    unsigned long long num_inputs;
-    unsigned long long num_neurons;
-    unsigned int num_states;
-    unsigned long long num_recs_on;
-    unsigned long long timestamp;
-    unsigned int num_nsat_params_groups;
-    unsigned int num_learning_pms_groups;
+    array_list *ext_syn_rec_ids;
+    array_list *nsat_syn_rec_ids;
+    int num_inputs;
+    int num_neurons;
+    int num_states;
+    int num_recs_on;
+    int timestamp;
     int tstdpmax;
+    int num_nsat_params_groups;
+    int num_learning_pms_groups;
     bool is_learning_on;
     bool is_ext_evts_on;
     bool is_learning_gated;
@@ -160,7 +164,6 @@ typedef struct cores_params_s cores_params;
 /* Monitors parameters struct */
 struct monitors_params_s {
     bool mon_states;
-    bool mon_states_fpga;
     bool mon_weights;
     bool mon_final_weights;
     bool mon_spikes; 
@@ -179,8 +182,8 @@ typedef struct state_s state;
 
 /* Events router struct */
 struct router_s {
-    unsigned int dst_core_id;
-    unsigned long long dst_neuron_id;
+    int dst_core_id;
+    int dst_neuron_id;
 } __attribute__ ((aligned));
 typedef struct router_s router;
 
@@ -191,10 +194,10 @@ struct unit_s {
     list_syn **syn_ptr;
     state *s;
     router *ptr_cores;
-    unsigned long long spk_counter; 
-    unsigned int router_size;
-    unsigned long long counter;
-    unsigned int ref_period;     /* That serves as delay for innput units */
+    int spk_counter; 
+    int router_size;
+    int counter;
+    int ref_period;     /* That serves as delay for innput units */
     int num_synapses;
     bool is_spk_rec_on;
     bool is_transmitter;
@@ -204,8 +207,8 @@ typedef struct unit_s unit;
 
 /* Synapse statistics struct */
 struct synapse_stat_s {
-    unsigned long long tot_ext_syn_num;
-    unsigned long long tot_nsat_syn_num;
+    int tot_ext_syn_num;
+    int tot_nsat_syn_num;
 } __attribute__ ((aligned));
 typedef struct synapse_stat_s synapse_stat;
 
@@ -247,7 +250,7 @@ struct core_vars_s {
     STATETYPE *acm;
     STATETYPE *g;
     STATETYPE *xinit;
-    unsigned long long *rec_spk_on;
+    int *rec_spk_on;
 } __attribute__ ((aligned));
 typedef struct core_vars_s core_vars;
 
@@ -272,9 +275,9 @@ struct nsat_core_s {
     global_params *g_pms;
     core_vars *vars;
     WTYPE *shared_memory;
-    unsigned int core_id;
-    unsigned long long curr_time;
-    size_t sm_size;
+    int curr_time;
+    int sm_size;
+    int core_id;
     char *ext_evts_fname;
 } __attribute__ ((aligned));
 typedef struct nsat_core_s nsat_core;
@@ -294,7 +297,6 @@ void print_params2file(fnames *, nsat_core *, global_params *);
 FILE *open_monitor_file(char *);
 void open_cores_monitor_files(nsat_core *, fnames *, size_t);
 void close_cores_monitor_files(nsat_core *, size_t);
-void store_fpga_states(nsat_core *);
 void update_state_monitor_file(nsat_core *);
 void update_monitor_stats(int, int, int, int, FILE *, int, bool);
 void update_state_monitor_online(nsat_core *);
@@ -311,53 +313,52 @@ int bin_file_size(FILE *);
 
 /* String manipulation functions declarations */
 char *gen_fname(char *, int, int);
-char *gen_ext_evts_fname(char *, unsigned int);
+char *gen_ext_evts_fname(char *, int);
 char *add_extension(char *);
 
 
 /* Files I/O functions declarations */
-void get_external_events(FILE *, nsat_core **, unsigned long long,
-                         unsigned int);
-void get_external_events_per_core(FILE *, nsat_core **, unsigned long long);
+void get_external_events(FILE *, nsat_core **, int,
+                         int);
+void get_external_events_per_core(FILE *, nsat_core **, int);
 void get_davis_events(int fd, nsat_core **cores);
 void write_spikes_events(fnames *, nsat_core *, int);
-void write_final_weights(fnames *, nsat_core *, unsigned int);
+void write_final_weights(fnames *, nsat_core *, int);
 void write_shared_memories(fnames *, nsat_core *, int);
 void write_spikes_events_online(nsat_core *);
 void write_spike_statistics(fnames *, nsat_core *, int);
 
 
 /* Read/Load parameters functions declarations */
-void read_core_params(FILE *, nsat_core *, unsigned int);
-void read_nsat_params(FILE *, nsat_core *, unsigned int);
-void read_lrn_params(FILE *, nsat_core *, unsigned int);
-void read_monitor_params(FILE *, nsat_core *, unsigned int);
+void read_core_params(FILE *, nsat_core *, int);
+void read_nsat_params(FILE *, nsat_core *, int);
+void read_lrn_params(FILE *, nsat_core *, int);
+void read_monitor_params(FILE *, nsat_core *, int);
 void read_global_params(FILE *, global_params *pms);
 
 
 /* Initialization functions declarations */
-void allocate_cores(nsat_core **, fnames *, unsigned int);
-void initialize_cores_vars(nsat_core *, unsigned int);
-void initialize_cores_neurons(nsat_core **, unsigned int);
+void allocate_cores(nsat_core **, fnames *, int);
+void initialize_cores_vars(nsat_core *, int);
+void initialize_cores_neurons(nsat_core **, int);
 void initialize_monitor_spk(char *, unit **);
 void initialize_cores_connections(char *, nsat_core *);
-void initialize_incores_connections(fnames *, nsat_core **, unsigned int);
+void initialize_incores_connections(fnames *, nsat_core **, int);
 
 
 /* Cleanup functions declarations */
-void dealloc_neurons(nsat_core **, unsigned int);
-void dealloc_cores(nsat_core **, unsigned int);
+void dealloc_neurons(nsat_core **, int);
+void dealloc_cores(nsat_core **, int);
 
 
 /* Mapping functions declarations */
-void nsat_pms_groups_map_file(char *, nsat_core *, unsigned int);
-void learning_pms_groups_map_file(char *, nsat_core *, unsigned int);
+void nsat_pms_groups_map_file(char *, nsat_core *, int);
+void learning_pms_groups_map_file(char *, nsat_core *, int);
 
 
 /* NSAT auxiliary functions */
-void count_synapses(unit **, unsigned long long *, unsigned long long,
-                    unsigned int);
-void max_stdp_time(learning_params *, cores_params *);
+void count_synapses(unit **, int *, int,
+                    int);
 
 /* NSAT auxiliary functions declarations */
 int one_bit_shift(int, int);
@@ -367,42 +368,32 @@ WTYPE randomized_rounding(WTYPE, int);
 
 
 /* Threads ready functions */
-#if OLD == 1
-void *nsat_dynamics(void *);
-#else
 void nsat_dynamics(nsat_core *);
-#endif
-#if OLD == 1
-void *nsat_events_and_learning(void *);
-#else
 void nsat_events_and_learning(nsat_core *);
-#endif
 void *nsat_thread(void *);
 
 int iterate_nsat(fnames *);
-int iterate_nsat_new(fnames *);
-int iterate_nsat_old(fnames *);
 
 /* Core NSAT functions declarations */
-void refractory_period(STATETYPE **, unit *, unsigned long long, unsigned int);
-void state_reset(STATETYPE **, unit *, array_list *, unsigned int);
-void shift_synaptic_events(STATETYPE **, unit *, unsigned long long, unsigned int);
+void refractory_period(STATETYPE **, unit *, int, int);
+void state_reset(STATETYPE **, unit *, array_list *, int);
+void shift_synaptic_events(STATETYPE **, unit *, int, int);
 void set_counters(unit *, unit *, array_list *, array_list *, int);
 void set_global_modulator(STATETYPE **, STATETYPE *, unit *, array_list *,
-                          unsigned int);
-void integrate_nsat(STATETYPE **, STATETYPE *, unit *, unsigned long long,
-                    unsigned int);
-void expand_spike_list(unit *, array_list *, array_list **, unsigned long long,
-                       unsigned long long, int);        
+                          int);
+void integrate_nsat(STATETYPE **, STATETYPE *, unit *, int,
+                    int);
+void expand_spike_list(unit *, array_list *, array_list **, int,
+                       int, int);        
 void accumulate_synaptic_events(STATETYPE **, unit *, unit *, array_list *,
-                                unsigned int, unsigned int, unsigned long long);
+                                int);
 void spike_events(STATETYPE *, unit *, array_list *, array_list *, array_list *,
-                  array_list *, unsigned long long, unsigned long long,
-                  unsigned int, unsigned int);
+                  array_list *, int, int,
+                  int);
 void causal_stdp(unit *, unit *, STATETYPE *, STATETYPE *, array_list *,
-                 unsigned long long, unsigned int, int, bool, bool);
-void acausal_stdp(unit *, unit *, STATETYPE *, array_list *, unsigned long long,
-                  unsigned int, int, bool, bool);
+                 int, int, int, bool, bool);
+void acausal_stdp(unit *, unit *, STATETYPE *, array_list *, int,
+                  int, int, bool, bool);
 
 
 /********************************************************************/
@@ -420,9 +411,9 @@ void acausal_stdp(unit *, unit *, STATETYPE *, array_list *, unsigned long long,
  *  void
  **************************************************************************/
 inline void over_under_flow(nsat_core *core) {
-    size_t j = 0;
-	unsigned int k = 0;
-    unsigned int num_states = core->core_pms.num_states;
+    int j = 0;
+	int k = 0;
+    int num_states = core->core_pms.num_states;
 
 	for(j = 0; j < core->core_pms.num_neurons; ++j) {
 		for(k = 0; k < num_states; ++k) {
@@ -452,9 +443,9 @@ inline void over_under_flow(nsat_core *core) {
  **************************************************************************/
 inline void copy_states(unit **dest,
                         STATETYPE *src,
-                        unsigned long long size_x,
-                        unsigned int size_y) {
-    size_t j, k;
+                        int size_x,
+                        int size_y) {
+    int j, k;
 
     for(j = 0; j < size_x; ++j) {
         for(k = 0; k < size_y; ++k) {

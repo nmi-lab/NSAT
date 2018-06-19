@@ -32,11 +32,11 @@
  *  void
  **************************************************************************/
 void count_synapses(unit **neuron,
-                    unsigned long long *total_num_synapses,
-                    unsigned long long num_units,
-                    unsigned int num_states) {
-    unsigned long long j;
-    unsigned int k;
+                    int *total_num_synapses,
+                    int num_units,
+                    int num_states) {
+    int j;
+    int k;
     int count = 0, glob_count = 0;
 
     for (j = 0; j < num_units; ++j) {
@@ -52,28 +52,4 @@ void count_synapses(unit **neuron,
     }
 
     *total_num_synapses = glob_count;
-}
-
-
-/* ************************************************************************
- * MAX_STDP_TIME: This function finds the maximum STDP time constant and
- * assigns it to the corresponding simulation parameter.
- *
- * Args : 
- *  lrn_pms (learning_params *)     : Learning parameters structure
- *  sim_pms (simulation_params *)   : Simulation parameters structure
- *
- * Returns :
- *  void
- **************************************************************************/
-void max_stdp_time(learning_params *lrn_pms, cores_params *core_pms) {
-    size_t i;
-    int mmax = lrn_pms[0].tstdp;
-
-    for (i = 0; i < core_pms->num_learning_pms_groups; ++i) {
-        if (lrn_pms[i].tstdp > mmax) {
-            mmax = lrn_pms[i].tstdp;
-        }
-    }
-    core_pms->tstdpmax = mmax;
 }

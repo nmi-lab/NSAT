@@ -8,5 +8,5 @@ from .NSATlib import run_c_nsat,\
                     importAER,\
                     ConfigurationNSAT
 #                   Events
-from .nsat_writer import C_NSATWriter, C_NSATWriterSingleThread, IntelFPGAWriter
+from .nsat_writer import C_NSATWriter, C_NSATWriterSingleThread
 from .nsat_reader import C_NSATReader, read_from_file

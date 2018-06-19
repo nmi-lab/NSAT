@@ -74,12 +74,6 @@ if __name__ == '__main__':
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_reset')
     c_nsat_writer.write()
 
-    # Write Intel FPGA parameters hex files
-#    # intel_fpga_writer = nsat.IntelFPGAWriter(cfg, path='.',
-#    #                                          prefix='test_reset')
-#    # intel_fpga_writer.write()
-#    # intel_fpga_writer.write_globals()
-
     # Call the C NSAT
     print("Running C NSAT!")
     nsat.run_c_nsat(c_nsat_writer.fname)

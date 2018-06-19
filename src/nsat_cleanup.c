@@ -30,9 +30,9 @@
  * Returns :
  *  void
  **************************************************************************/
-void dealloc_neurons(nsat_core **core, unsigned int num_cores) {
-    unsigned long long j;
-    unsigned int k, p;
+void dealloc_neurons(nsat_core **core, int num_cores) {
+    int j;
+    int k, p;
 
     for (p = 0; p < num_cores; ++p) {
         for (j = 0; j < (*core)[p].core_pms.num_inputs; ++j) {
@@ -73,18 +73,18 @@ void dealloc_neurons(nsat_core **core, unsigned int num_cores) {
  * Returns :
  *  void
  **************************************************************************/
-void dealloc_cores(nsat_core **cores, unsigned int num_cores) {
-    unsigned int p, i;
+void dealloc_cores(nsat_core **cores, int num_cores) {
+    int p, i;
 
     dealloc_neurons(cores, num_cores);
 
     for (p = 0; p < num_cores; ++p) {
 
         /* Destroy core's parameters structures */
-        destroy_list_id(&(*cores)[p].core_pms.ext_syn_rec_ids);
+        array_list_destroy(&(*cores)[p].core_pms.ext_syn_rec_ids, 0);
         dealloc((*cores)[p].core_pms.ext_syn_rec_ids);
 
-        destroy_list_id(&(*cores)[p].core_pms.nsat_syn_rec_ids);
+        array_list_destroy(&(*cores)[p].core_pms.nsat_syn_rec_ids, 0);
         dealloc((*cores)[p].core_pms.nsat_syn_rec_ids);
 
         /* Deallocate monitors structure */

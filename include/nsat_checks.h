@@ -29,9 +29,9 @@ inline bool is_power_of_two(int x) {
 }
 
 
-inline bool check_recs_flags(unsigned long long *x, unsigned long long size,
-                             unsigned long long num_neurons) {
-    unsigned long long j;
+inline bool check_recs_flags(int *x, int size,
+                             int num_neurons) {
+    int j;
 
     for(j = 0; j < size; ++j) {
         if (x[j] > num_neurons) {
@@ -85,8 +85,8 @@ inline int check_compliance(bool flag, int y) {
 }
 
 
-inline bool check_intervals(int *x, int inf, int sup, unsigned int size) {
-    unsigned int k;
+inline bool check_intervals(int *x, int inf, int sup, int size) {
+    int k;
 
     if (!size) {
         if (((*x-1 >= inf) && (*x-1 <= sup)) == false) {

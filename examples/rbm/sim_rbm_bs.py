@@ -4,7 +4,6 @@ import numpy as np
 from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
-from bars_stripes import bs_loader_npy, bs_load_and_save
 from ml_funcs import __tile_raster_images
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import shutil
@@ -17,6 +16,7 @@ def SimSpikingStimulus(stim1, stim2, time=1000, t_sim=None):
     integer, output is a poisson process with mean data/poisson, scaled by
     *poisson*.
     '''
+    pyST.STCreate.seed(100)
     n = stim1.shape[1]
     SL = pyST.SpikeList(id_list=range(n+n-2))
 
@@ -74,18 +74,24 @@ train_duration = 750
 test_duration = 5000
 
 print("############## Loading Data ##############")
-bs_load_and_save()
-data_train, targets_train, _ = bs_loader_npy(dset='train',
-                                             prefix='data/')
-data_classify, targets_classify, _ = bs_loader_npy(dset='train',
-                                                   prefix='data/')
+# data_train, targets_train, _ = bs_loader_npy(dset='train',
+#                                              prefix='data/')
+# data_classify, targets_classify, _ = bs_loader_npy(dset='train',
+#                                                    prefix='data/')
+# 
+
+data_train = np.load("/shares/data/bs/bs_train_data.npy")
+targets_train = np.load("/shares/data/bs/bs_train_targets.npy")
+data_classify = np.load("/shares/data/bs/bs_classify_data.npy")
+targets_classify = np.load("/shares/data/bs/bs_classify_targets.npy")
+
 
 # Prepare training stimulus
 idx = range(32) * n_mult
 np.random.shuffle(idx)
 data_train = data_train[idx, :]
 
-m = data_train.shape[0] * 2
+m = data_train.shape[1] * 2
 stim_train = np.zeros([m, Nv+Ns])
 stim_train_i = np.zeros([m, Nv])
 silent = np.zeros((1, Nv))
@@ -300,7 +306,7 @@ c_nsat_reader_test = nsat.C_NSATReader(cfg_test, fname_test)
 # cfg_train.core_cfgs[0].latex_print_parameters(2)
 
 if __name__ == '__main__':
-    n_epoch = 50
+    n_epoch = 30
     e = []
     print("############## Training ##############")
     for i in range(n_epoch):
@@ -313,9 +319,10 @@ if __name__ == '__main__':
                             fname_train.syn_wgt_table+'_core_0.dat',)
             shutil.copyfile(fname_train.shared_mem+'_core_0.dat',
                             fname_test.syn_wgt_table+'_core_0.dat',)
+        # res = c_nsat_reader_train.read_c_nsat_raw_events()[0]
         nsat.run_c_nsat(c_nsat_writer_test.fname)
-        test_spk = nsat.importAER(nsat.read_from_file(c_nsat_writer_test.fname.events+'_core_0.dat'), sim_ticks=sim_ticks_test)
-        train_spk = nsat.importAER(nsat.read_from_file(c_nsat_writer_train.fname.events+'_core_0.dat'), sim_ticks=sim_ticks_train)
+        test_spk = nsat.importAER(c_nsat_reader_test.read_c_nsat_raw_events()[0],
+                                  sim_ticks=sim_ticks_test)
         sl = test_spk.id_slice([16, 17])
         mm = np.argmax(sl.firing_rate(time_bin=test_duration), axis=0)[::2]
         print(100*sum(labels[::2] != mm)/32.0)

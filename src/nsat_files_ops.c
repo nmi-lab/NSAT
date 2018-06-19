@@ -33,26 +33,30 @@
  *  void
  **************************************************************************/
 void get_external_events(FILE *fp, nsat_core **core,
-                         unsigned long long curr_time,
-                         unsigned int num_cores)
+                         int curr_time,
+                         int num_cores)
 {
-    unsigned long long i, num_nonzeros, time, neuron_id;
-    unsigned long long core_id;
+    int res;
+    int i, num_nonzeros, time, neuron_id;
+    int core_id;
 
     if ((*core)[0].core_pms.is_ext_evts_on) {
-        fread(&time, sizeof(unsigned long long), 1, fp);
-        fread(&num_nonzeros, sizeof(unsigned long long), 1, fp);
+        res = fread(&time, sizeof(int), 1, fp);
+        fread_test(res, 1);
+        res = fread(&num_nonzeros, sizeof(int), 1, fp);
         if (num_nonzeros != 0) {
             for (i = 0; i < num_nonzeros; ++i) {
-                fread(&core_id, sizeof(unsigned long long), 1, fp);
+                res = fread(&core_id, sizeof(int), 1, fp);
+                fread_test(res, 1);
                 if (core_id >= num_cores) {
-                    printf("False core ID (%llu) detected in external events file!\n",
+                    printf("False core ID (%d) detected in external events file!\n",
                            core_id);
                     break;
                 }
-                fread(&neuron_id, sizeof(unsigned long long), 1, fp);
+                res = fread(&neuron_id, sizeof(int), 1, fp);
+                fread_test(res, 1);
                 if (neuron_id >= (*core)[core_id].core_pms.num_inputs) {
-                    printf("Core #%llu: False destination neuron ID (%llu) detected in exterrnal events file %s!\n",
+                    printf("Core #%d: False destination neuron ID (%d) detected in exterrnal events file %s!\n",
                            core_id, neuron_id, (*core)[core_id].ext_evts_fname);
                     break;
                 }
@@ -66,18 +70,22 @@ void get_external_events(FILE *fp, nsat_core **core,
 
 
 void get_external_events_per_core(FILE *fp, nsat_core **core,
-                                  unsigned long long curr_time)
+                                  int curr_time)
 {
-    unsigned long long i, num_nonzeros, time, neuron_id;
+    int res;
+    int i, num_nonzeros, time, neuron_id;
 
     if (fp != NULL) {
-        fread(&time, sizeof(unsigned long long), 1, fp);
-        fread(&num_nonzeros, sizeof(unsigned long long), 1, fp);
+        res = fread(&time, sizeof(int), 1, fp);
+        fread_test(res, 1);
+        res = fread(&num_nonzeros, sizeof(int), 1, fp);
+        fread_test(res, 1);
         if (num_nonzeros != 0) {
             for (i = 0; i < num_nonzeros; ++i) {
-                fread(&neuron_id, sizeof(unsigned long long), 1, fp);
+                fread(&neuron_id, sizeof(int), 1, fp);
+                fread_test(res, 1);
                 if (neuron_id >= (*core)->core_pms.num_inputs) {
-                    printf("False destination neuron ID (%llu) detected in exterrnal events file %s!\n",
+                    printf("False destination neuron ID (%d) detected in exterrnal events file %s!\n",
                            neuron_id,
                            (*core)->ext_evts_fname);
                     break;
@@ -135,7 +143,8 @@ void get_davis_events(int fd, nsat_core **cores) {
                     nanosleep(&tm, &tm);
                 }
                 neuron_id = buffer;
-                array_list_push(&(*cores)[core_id].ext_events, neuron_id, 0, 0);
+                array_list_push(&(*cores)[core_id].ext_events, neuron_id,
+                                (*cores)[core_id].curr_time, 1);
                 (*cores)[core_id].ext_neuron[neuron_id].counter = time;
             }
             break;
@@ -163,9 +172,9 @@ void get_davis_events(int fd, nsat_core **cores) {
  *  void
  **************************************************************************/
 void write_final_weights(fnames *fname, nsat_core *core,
-                         unsigned int num_cores) {
-    unsigned long long j;
-    unsigned int k, p;
+                         int num_cores) {
+    int j;
+    int k, p;
     int tmp = 0, tot = 0;
     size_t add;
     FILE *fp = NULL;
@@ -234,7 +243,7 @@ void write_final_weights(fnames *fname, nsat_core *core,
  *  void
  **************************************************************************/
 void write_spikes_events(fnames *fname, nsat_core *core, int num_cores) {
-    unsigned int p;
+    int p;
     char *filename=NULL;                     /* Tmp filename */  
     FILE *fp = NULL;
 
@@ -245,14 +254,14 @@ void write_spikes_events(fnames *fname, nsat_core *core, int num_cores) {
             printf("File %s cannot be opened!\n", filename);
             exit(-1);
         }
-    
+
         fwrite(core[p].events->array,
-               sizeof(unsigned long long),
+               sizeof(int),
                core[p].events->length,
                fp);
 
         fwrite(core[p].events->times,
-               sizeof(unsigned long long),
+               sizeof(int),
                core[p].events->length,
                fp);
 
@@ -263,21 +272,21 @@ void write_spikes_events(fnames *fname, nsat_core *core, int num_cores) {
 
 
 void write_spikes_events_online(nsat_core *core) {
-    size_t p;
+    int p;
 
     for (p = 0; p < core->g_pms->num_cores; ++p) {
         fwrite(&core[p].curr_time,
-               sizeof(unsigned long long),
+               sizeof(int),
                1,
                core[p].files->event_file);
 
         fwrite(&core[p].mon_events->length-1,
-               sizeof(unsigned long long),
+               sizeof(int),
                1,
                core[p].files->event_file);
         
         fwrite(&core[p].mon_events->array,
-               sizeof(unsigned long long),
+               sizeof(int),
                core[p].mon_events->length-1,
                core[p].files->event_file);
     }
@@ -317,18 +326,18 @@ void write_shared_memories(fnames *fname, nsat_core *core, int num_cores) {
 
 
 void write_spike_statistics(fnames *fname, nsat_core *core, int num_cores) {
-    uint64_t p, j;
+    int p, j;
     FILE *fp;
 
     if(!(fp = fopen(fname->stats_nsat, "wb"))) {
         printf("File %s cannot open!\n", fname->stats_nsat);   
         printf("Nothing written to the file!\n");   
     } else {
-        for (p = 0; p < (uint64_t) num_cores; ++p) {
-            fwrite(&p, sizeof(uint64_t), 1, fp);
-            for (j = 0; j < (uint64_t) core[p].core_pms.num_neurons; ++j) {
-                fwrite(&j, sizeof(uint64_t), 1, fp);
-                fwrite(&core[p].nsat_neuron[j].spk_counter, sizeof(uint64_t), 1, fp);
+        for (p = 0; p < (int) num_cores; ++p) {
+            fwrite(&p, sizeof(int), 1, fp);
+            for (j = 0; j < (int) core[p].core_pms.num_neurons; ++j) {
+                fwrite(&j, sizeof(int), 1, fp);
+                fwrite(&core[p].nsat_neuron[j].spk_counter, sizeof(int), 1, fp);
             }
         }
         fclose(fp);

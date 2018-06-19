@@ -41,7 +41,7 @@ def PeriodicPrePostSpikingStimulus(freqs, diff, ticks=1000):
     SL = pyST.SpikeList(id_list=list(range(2)))
     base_phase = 100.0
     shift_phase = base_phase + diff
-    
+
     SL[0] = pyST.STCreate.regular_generator(freqs,
                                             t_start=0,
                                             phase=base_phase,
@@ -122,7 +122,7 @@ if __name__ == '__main__':
     cfg.core_cfgs[0].modstate[0] = 3
 
     # Parameters for the STDP kernel function
-    rNLRN_GROUPS = list(range(nsat.N_LRNGROUPS))
+    rNLRN_GROUPS = list(range(8))
     cfg.core_cfgs[0].tstdp = np.array([30 for _ in rNLRN_GROUPS], 'int')
     cfg.core_cfgs[0].tca = np.array([[6, 15] for _ in rNLRN_GROUPS], 'int')
     cfg.core_cfgs[0].hica = np.array([[2, 1, 0] for _ in rNLRN_GROUPS], 'int')
@@ -189,19 +189,22 @@ if __name__ == '__main__':
     #ww = np.array(c_nsat_reader.read_c_nsat_synaptic_weights()[0])
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
-    # wt = c_nsat_reader.read_c_nsat_weights_evo(2)[0]
-    wt = c_nsat_reader.read_c_nsat_syn_evo()[0][0]
+    # wt = c_nsat_reader.read_c_nsat_syn_evo()[0][0]
+    wt = c_nsat_reader.read_synaptic_weights_history()[0]
 
-    spk = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'), sim_ticks=sim_ticks)
+    # spk = nsat.importAER(nsat.read_from_file(
+    #     c_nsat_writer.fname.events + '_core_0.dat'), sim_ticks=sim_ticks)
+    spk = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+                         sim_ticks=sim_ticks)
     spk.raster_plot()
 
     print((SL[0].spike_times))
     print((SL[1].spike_times))
     print((spk[0].spike_times))
 
-    #fig = plt.figure()
-    #ax = fig.add_subplot(111)
-    #ax.plot(ww[:N_INPUTS[0], N_INPUTS[0], 1], 'k.')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.plot(ww[:N_INPUTS[0], N_INPUTS[0], 1], 'k.')
 
     # Plot the results
     fig = plt.figure(figsize=(15, 15))
@@ -212,29 +215,30 @@ if __name__ == '__main__':
         plt.axvline(i, color='k', lw=1)
     ax.set_ylabel('$V_m$')
 
-    #ax = fig.add_subplot(4, 2, 2)
-    #ax.plot(states_core0[:-1, 1, 0], 'b', lw=3, label='$x_m$')
-    #ax.set_ylabel('$V_m$')
+    # ax = fig.add_subplot(4, 2, 2)
+    # ax.plot(states_core0[:-1, 1, 0], 'b', lw=3, label='$x_m$')
+    # ax.set_ylabel('$V_m$')
 
     ax = fig.add_subplot(4, 2, 3)
     ax.plot(states_core0[:-1, 0, 1], 'b', lw=3, label='$I_{syn}$')
     ax.set_ylabel('$I_{syn}$')
 
-    #ax = fig.add_subplot(4, 2, 4)
-    #ax.plot(states_core0[:-1, 1, 1], 'b', lw=3, label='$I_{syn}$')
-    #ax.set_ylabel('$I_{syn}$')
+    # ax = fig.add_subplot(4, 2, 4)
+    # ax.plot(states_core0[:-1, 1, 1], 'b', lw=3, label='$I_{syn}$')
+    # ax.set_ylabel('$I_{syn}$')
 
     ax = fig.add_subplot(4, 2, 5)
     ax.plot(states_core0[:-1, 0, 2], 'b', lw=3, label='$x_m$')
     ax.set_ylabel('$x_m$')
 
-    #ax = fig.add_subplot(4, 2, 6)
-    #ax.plot(states_core0[:-1, 1, 1], 'b', lw=3, label='$x_m$')
-    #ax.set_ylabel('$x_m$')
+    # ax = fig.add_subplot(4, 2, 6)
+    # ax.plot(states_core0[:-1, 1, 1], 'b', lw=3, label='$x_m$')
+    # ax.set_ylabel('$x_m$')
 
+    print(wt.shape)
     ax = fig.add_subplot(4, 2, 7)
-    # ax.plot(wt[:, 0, 1], 'r', lw=3)
-    ax.plot(wt[2][wt[2][:, 1]==0, 0], wt[2][wt[2][:, 1]==0, 4], 'r', lw=3)
+    # ax.plot(wt[wt[:, 0, :] == 0, 0], wt[wt[:, 1, :] == 0, 4], 'r', lw=3)
+    ax.plot(wt[:, 0, 0], wt[:, 1, 0], 'r', lw=3)
     for i in spk[0].spike_times:
         plt.axvline(i, color='k', lw=1)
     for i in spk0[1].spike_times:
@@ -242,21 +246,20 @@ if __name__ == '__main__':
     ax.set_ylabel('$w$')
 
     ax = fig.add_subplot(4, 2, 8)
-    # ax.plot(wt[:, 1, 1], 'r', lw=3)
-    ax.plot(wt[2][wt[2][:, 1]==1, 0], wt[2][wt[2][:, 1]==1, 4], 'r', lw=3)
+    # ax.plot(wt[wt[:, 1, :] == 1, 0], wt[wt[:, 1, :] == 1, 4], 'r', lw=3)
     for i in spk[0].spike_times:
         plt.axvline(i, color='k', lw=1)
     for i in spk0[1].spike_times:
         plt.axvline(i, color='r', lw=1)
     ax.set_ylabel('$w$')
 
-    #ax = fig.add_subplot(4, 2, 8)
-    #ax.plot(wt[:, 1, 1], 'r', lw=3)
-    #ax.set_ylabel('$w$')
+    # ax = fig.add_subplot(4, 2, 8)
+    # ax.plot(wt[:, 1, 1], 'r', lw=3)
+    # ax.set_ylabel('$w$')
 
-    #fig = plt.figure(figsize=(10, 5))
-    #for i in spk[0].spike_times:
+    # fig = plt.figure(figsize=(10, 5))
+    # for i in spk[0].spike_times:
     #    plt.plot(wt[:, 1, 1], 'r', lw=3)
     #    plt.axvline(i, color='k', lw=1)
-    
+
     plt.show()

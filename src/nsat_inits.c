@@ -32,15 +32,14 @@
  **************************************************************************/
 void allocate_cores(nsat_core **cores,
                     fnames *fname, 
-                    unsigned int num_cores) {
+                    int num_cores) {
     int i;
-    unsigned int p;
+    int p;
 
     for(p = 0; p < num_cores; ++p) {
         /* Allocate and initialize monitors structure */
         (*cores)[p].mon_pms = alloc(monitors_params, 1);
         (*cores)[p].mon_pms->mon_states = false;
-        (*cores)[p].mon_pms->mon_states_fpga = false;
         (*cores)[p].mon_pms->mon_weights = false;
         (*cores)[p].mon_pms->mon_final_weights = false;
         (*cores)[p].mon_pms->mon_spikes = false;
@@ -150,8 +149,8 @@ void allocate_cores(nsat_core **cores,
  * Returns :
  *  void
  **************************************************************************/
-void initialize_cores_vars(nsat_core *core, unsigned int num_cores) {
-    size_t size, p;
+void initialize_cores_vars(nsat_core *core, int num_cores) {
+    int size, p;
 
     for (p = 0; p < num_cores; ++p) {
         size = core[p].core_pms.num_neurons * core[p].core_pms.num_states;
@@ -177,8 +176,8 @@ void initialize_cores_vars(nsat_core *core, unsigned int num_cores) {
  * Returns :
  *  void
  **************************************************************************/
-void initialize_cores_neurons(nsat_core **cores, unsigned int num_cores) {
-    size_t j, k, p;
+void initialize_cores_neurons(nsat_core **cores, int num_cores) {
+    int j, k, p;
 
     for (p = 0; p < num_cores; ++p) {
         (*cores)[p].nsat_neuron = alloc(unit, (*cores)[p].core_pms.num_neurons);
@@ -252,14 +251,11 @@ int bin_file_size(FILE *fp) {
  *  void
  **************************************************************************/
 void initialize_incores_connections(fnames *fname, nsat_core **core,
-                                    unsigned int num_cores) {
-    int i;
-    size_t sm_size;
-    unsigned int p;
-    unsigned long long j;
-    unsigned long long tot_num_neurons, non_zero_elements = 0;
-    unsigned long long src, dst, stt, ptr;
-    int parity_check = 0;
+                                    int num_cores) {
+    int p;
+    int i, j, sm_size;
+    int tot_num_neurons, non_zero_elements = 0, parity_check = 0;
+    int src, dst, stt, ptr;
     char *w_fname = NULL, *ptr_fname = NULL;
 
     FILE *fp, *fw;
@@ -280,7 +276,7 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             exit(-1);
         }
         dealloc(w_fname);
-        sm_size = (size_t) bin_file_size(fw) / 4;
+        sm_size = (int) bin_file_size(fw) / 4;
 
         /* Allocate shared memory */
         (*core)[p].sm_size = sm_size;
@@ -303,12 +299,12 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             parity_check = 0;
 
             /* Read the pointer table */
-            fread(&non_zero_elements, sizeof(unsigned long long), 1, fp);
+            fread(&non_zero_elements, sizeof(int), 1, fp);
             for (i = 0; i < non_zero_elements; ++i) {
-                fread(&src, sizeof(unsigned long long), 1, fp);
-                fread(&dst, sizeof(unsigned long long), 1, fp);
-                fread(&stt, sizeof(unsigned long long), 1, fp);
-                fread(&ptr, sizeof(unsigned long long), 1, fp);
+                fread(&src, sizeof(int), 1, fp);
+                fread(&dst, sizeof(int), 1, fp);
+                fread(&stt, sizeof(int), 1, fp);
+                fread(&ptr, sizeof(int), 1, fp);
 
                 if (src < (*core)[p].core_pms.num_neurons) {
                     push_syn(&(*core)[p].nsat_neuron[src].syn_ptr[stt],
@@ -324,9 +320,9 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             if (parity_check != non_zero_elements) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
                 printf("Invalid synaptic weights dimension!\n");
-                printf("%d %d %llu\n", parity_check,
-                                     non_zero_elements,
-                                     (*core)[p].core_pms.num_neurons);
+                printf("%d %d %d\n", parity_check,
+                                           non_zero_elements,
+                                           (*core)[p].core_pms.num_neurons);
                 fclose(fp);
                 exit(-1);
             }
@@ -345,12 +341,12 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
                               (*core)[p].core_pms.num_neurons;
         
             /* Read the non zero elements from fp */
-            fread(&non_zero_elements, sizeof(unsigned long long), 1, fp);
+            fread(&non_zero_elements, sizeof(int), 1, fp);
             for (i = 0; i < non_zero_elements; ++i) {
-                fread(&src, sizeof(unsigned long long), 1, fp);
-                fread(&dst, sizeof(unsigned long long), 1, fp);
-                fread(&stt, sizeof(unsigned long long), 1, fp);
-                fread(&ptr, sizeof(unsigned long long), 1, fp);
+                fread(&src, sizeof(int), 1, fp);
+                fread(&dst, sizeof(int), 1, fp);
+                fread(&stt, sizeof(int), 1, fp);
+                fread(&ptr, sizeof(int), 1, fp);
 
                 if (src < (*core)[p].core_pms.num_inputs) {
                     if(dst < (*core)[p].core_pms.num_inputs){
@@ -416,11 +412,11 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
 void initialize_cores_connections(char *fname, nsat_core *core)
 {
     int p;
-    unsigned long long i;
-    unsigned long long num_connections = 0;
+    int i;
+    int num_connections = 0;
     int num_iterations = 0;
-    unsigned int src_core_id, dst_core_id;
-    unsigned long long src_neuron_id, dst_neuron_id;
+    int src_core_id, dst_core_id;
+    int src_neuron_id, dst_neuron_id;
     FILE *fp = NULL; 
 
     if(!(fp = fopen(fname, "rb"))) {
@@ -437,14 +433,14 @@ void initialize_cores_connections(char *fname, nsat_core *core)
 
     for (p = 0; p < num_iterations; ++p) {
         /* Read source core ID */
-        fread(&src_core_id, sizeof(unsigned int), 1, fp);
+        fread(&src_core_id, sizeof(int), 1, fp);
         if (src_core_id > core[0].g_pms->num_cores - 1) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
             printf("Invalid source core ID detected in intercore initialization process!\n");
             exit(-1);
         }
         /* Read source neuron ID */
-        fread(&src_neuron_id, sizeof(unsigned long long), 1, fp);
+        fread(&src_neuron_id, sizeof(int), 1, fp);
         src_neuron_id = abs(src_neuron_id - core[src_core_id].core_pms.num_inputs);
         if (src_neuron_id > core[src_core_id].core_pms.num_neurons - 1) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
@@ -452,7 +448,7 @@ void initialize_cores_connections(char *fname, nsat_core *core)
             exit(-1);
         }
         /* Read number of connections */
-        fread(&num_connections, sizeof(unsigned long long), 1, fp);
+        fread(&num_connections, sizeof(int), 1, fp);
         
         /* Assign all the values and allocate memories */
         core[src_core_id].nsat_neuron[src_neuron_id].router_size = num_connections;
@@ -460,13 +456,13 @@ void initialize_cores_connections(char *fname, nsat_core *core)
         core[src_core_id].nsat_neuron[src_neuron_id].is_transmitter = true;
         /* Read all the destinations */
         for (i = 0; i < num_connections; ++i) {
-            fread(&dst_core_id, sizeof(unsigned int), 1, fp);
+            fread(&dst_core_id, sizeof(int), 1, fp);
             if (dst_core_id > core[0].g_pms->num_cores - 1) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
                 printf("Invalid destination core ID detected in intercore initialization process!\n");
                 exit(-1);
             }
-            fread(&dst_neuron_id, sizeof(unsigned long long), 1, fp);
+            fread(&dst_neuron_id, sizeof(int), 1, fp);
             if (dst_neuron_id > core[dst_core_id].core_pms.num_inputs - 1) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
                 printf("Invalid destination neuron ID detected in intercore initialization process!\n");

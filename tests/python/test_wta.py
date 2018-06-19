@@ -228,12 +228,6 @@ if __name__ == "__main__":
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_wta')
     c_nsat_writer.write()
 
-    # Write Intel FPGA parameters hex files
-##    intel_fpga_writer = nsat.IntelFPGAWriter(cfg, path='.',
-##                                             prefix='test_wta')
-##    intel_fpga_writer.write()
-##    intel_fpga_writer.write_globals()
-
     # Call the C NSAT
     print("Running C NSAT!")
     nsat.run_c_nsat(c_nsat_writer.fname)
@@ -243,7 +237,7 @@ if __name__ == "__main__":
     states = c_nsat_reader.read_c_nsat_states()
     states_core0 = states[0][1]
 
-    in_apikelist = SL
+    in_spikelist = SL
     out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
                                    sim_ticks=sim_ticks,
                                    id_list=[0])

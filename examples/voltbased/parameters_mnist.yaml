@@ -1,0 +1,26 @@
+{
+N_NEURONS: 80,
+N_INP: 784,
+eta: 0.005, 
+t_ref: 5.0, 
+tau_m: 15.0,
+tau_e: 20.0,
+vt: 1408, #-54.0,
+vrest: 0,
+vreset: 0, #-60.0,
+t_sim: 80000,
+# Pattern parameters
+NP: 2,
+f: 1.28,
+pf: 10.0, # 5.0
+tp: 50.0, # Pattern time
+jitter: 0.0,
+# STDP Leaning paramters
+Ap: 8.0,
+Am: 2.0,
+# Vmem learning
+V_th_stdp: 1216,
+# Homeostasis
+tfr: 1.5,
+tau_r: 200.0,
+}

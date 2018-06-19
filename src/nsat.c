@@ -23,8 +23,8 @@ extern inline void over_under_flow(nsat_core *core);
 
 extern inline void copy_states(unit **dest,
                                STATETYPE *src,
-                               unsigned long long num_neurons,
-                               unsigned int num_states); 
+                               int num_neurons,
+                               int num_states); 
 
 
 /* ************************************************************************
@@ -235,12 +235,11 @@ WTYPE randomized_rounding(WTYPE dw, int shift_size)
 void expand_spike_list(unit *neuron,
                        array_list *spikes,
                        array_list **spikes4lrn,
-                       unsigned long long curr_time,
-                       unsigned long long num_units,
+                       int curr_time,
+                       int num_units,
                        int tstdpmax)
 {
-    unsigned long long j, id;
-    int dlpt;
+    int j, id, dlpt = 0;
 
     for (j = 0; j < spikes->length; ++j) {
         id = spikes->array[j];
@@ -279,7 +278,7 @@ void set_counters(unit *nsat_neuron,
                   array_list *ext_events,
                   int curr_time)
 {
-    unsigned long long j, id;
+    int j, id;
 
     for (j = 0; j < ext_events->length; ++j) {
         id = ext_events->array[j];
@@ -311,9 +310,9 @@ void set_global_modulator(STATETYPE **x,
                           STATETYPE *y,
                           unit *nsat_neuron,
                           array_list *nsat_events,
-                          unsigned int num_states)
+                          int num_states)
 {
-    unsigned long long j, id;
+    int j, id;
 
     for (j = 0; j < nsat_events->length; ++j) {
         id = nsat_events->array[j];
@@ -337,10 +336,10 @@ void set_global_modulator(STATETYPE **x,
  **************************************************************************/
 void refractory_period(STATETYPE **x,
                        unit *nsat_neuron,
-                       unsigned long long num_neurons,
-                       unsigned int num_states)
+                       int num_neurons,
+                       int num_states)
 {
-    unsigned long long j;
+    int j;
 
     for (j = 0; j < num_neurons; ++j) {
         if (nsat_neuron[j].ref_period > 0){
@@ -368,11 +367,11 @@ void refractory_period(STATETYPE **x,
 void integrate_nsat(STATETYPE **x,
                     STATETYPE *acm,
                     unit *nsat_neuron,
-                    unsigned long long num_neurons,
-                    unsigned int num_states)
+                    int num_neurons,
+                    int num_states)
 {
-    unsigned long long j;
-    unsigned int k, l;
+    int j;
+    int k, l;
     int mysum = 0;
 
     for (j = 0; j < num_neurons; ++j) {
@@ -404,9 +403,7 @@ void integrate_nsat(STATETYPE **x,
  *  acm  (int **)               : Accumulator (synaptic inputs)
  *  pre_unit (unit *)           : Pre-synaptic units
  *  post_unit (unit *)          : Post-synaptic units
- *  spikes_list (list_spk *)    : Spike list
- *  g_pms (global_params *)     : Global parameters
- *  curr_time (int)             : Current simulation step    
+ *  spikes_list (array_list *)  : Spike list
  *  num_states (int)            : Number of state's components
  *
  * Returns :
@@ -416,12 +413,10 @@ void accumulate_synaptic_events(STATETYPE **acm,
                                 unit *pre_unit,
                                 unit *post_unit,
                                 array_list *spikes_list,
-                                unsigned int num_states,
-                                unsigned int core_id,
-                                unsigned long long time)
+                                int num_states)
 {
-    unsigned long long j, pre;
-    unsigned int k;
+    int j, pre;
+    int k;
     int l, num_pre_spks;
     int *prb=NULL;
 
@@ -464,11 +459,11 @@ void accumulate_synaptic_events(STATETYPE **acm,
  **************************************************************************/
 void shift_synaptic_events(STATETYPE **acm,
                            unit *nsat_neuron,
-                           unsigned long long num_neurons,
-                           unsigned int num_states)
+                           int num_neurons,
+                           int num_states)
 {
-    unsigned long long j;
-    unsigned int k;
+    int j;
+    int k;
     int tmp;
 
     for (j = 0; j < num_neurons; ++j) {
@@ -510,12 +505,11 @@ void spike_events(STATETYPE *x,
                   array_list *events,
                   array_list *mon_events,
                   array_list *trans_events,
-                  unsigned long long curr_time,
-                  unsigned long long num_neurons,
-                  unsigned int core_id,
-                  unsigned int num_states)
+                  int curr_time,
+                  int num_neurons,
+                  int num_states)
 {
-    unsigned long long j;
+    int j;
 
     for (j = 0; j < num_neurons; ++j) {
         /* Check for spike - fixed threshold value*/
@@ -538,8 +532,9 @@ void spike_events(STATETYPE *x,
                 if (x[j*num_states] >= x[j*num_states+1]) {
                     array_list_push(&nsat_events, j, curr_time, 1);
                     nsat_neuron[j].spk_counter++;
-                    if (nsat_neuron[j].is_transmitter)
+                    if (nsat_neuron[j].is_transmitter) {
                         array_list_push(&trans_events, j, curr_time, 1);
+                    }
 
                     if (nsat_neuron[j].is_spk_rec_on) {
                         array_list_push(&events, j, curr_time, 1);
@@ -569,18 +564,19 @@ void spike_events(STATETYPE *x,
 void state_reset(STATETYPE **x,
                  unit *nsat_neuron,
                  array_list *nsat_events,
-                 unsigned int num_states)
+                 int num_states)
 {
-    unsigned long long j, id, t;
-    unsigned int k;
+    int j, id;
+    int k;
 
     for (j = 0; j < nsat_events->length; ++j) {
         id = nsat_events->array[j];
         for (k = 0; k < num_states; ++k) {
-            if (nsat_neuron[id].nsat_ptr->is_xreset_on[k] == true)
+            if (nsat_neuron[id].nsat_ptr->is_xreset_on[k] == true) {
                 (*x)[id*num_states+k] = nsat_neuron[id].nsat_ptr->x_reset[k];
-            else
+            } else {
                 (*x)[id*num_states+k] += nsat_neuron[id].nsat_ptr->x_spike_incr[k];
+            }
         }
     
     }
@@ -604,14 +600,14 @@ void causal_stdp(unit *pre_unit,
                  STATETYPE *x,
                  STATETYPE *g,
                  array_list *spikes,
-                 unsigned long long curr_time,
-                 unsigned int num_states,
+                 int curr_time,
+                 int num_states,
                  int syn_precision,
                  bool is_learning_gated,
                  bool is_check_wlim_on)
 {
-    unsigned long long j, pre, ddt = 0;
-    unsigned int k;
+    int j, pre, ddt = 0;
+    int k;
     int tmp;
     int dw = 0, kdtca = 0, sca = 0, tau = 0;
 
@@ -640,7 +636,7 @@ void causal_stdp(unit *pre_unit,
                                     dw = sca * zero_bit_shift(g[ptr_post->id], kdtca);
                                 }
                                 if (post_unit[ptr_post->id].s[k].lrn_ptr->is_rr_on) {
-                                    int ww = randomized_rounding(dw, post_unit[ptr_post->id].s[k].lrn_ptr->rr_num_bits);
+                                    WTYPE ww = randomized_rounding(dw, post_unit[ptr_post->id].s[k].lrn_ptr->rr_num_bits);
                                     *(ptr_post->w_ptr) += ww;
                                 } else {
                                     *(ptr_post->w_ptr) += dw;
@@ -678,14 +674,14 @@ void acausal_stdp(unit *pre_unit,
                   unit *post_unit,
                   STATETYPE *x,
                   array_list *spikes,
-                  unsigned long long curr_time,
-                  unsigned int num_states,
+                  int curr_time,
+                  int num_states,
                   int syn_precision,
                   bool is_learning_gated,
                   bool is_check_wlim_on)
 {
-    unsigned long long j, pre;
-    unsigned int k;
+    int j, pre;
+    int k;
     int tmp;
     int detac = 0, kdtac = 0, sac = 0, dw = 0, tau = 0;
 
@@ -753,17 +749,10 @@ void acausal_stdp(unit *pre_unit,
  * Returns :
  *  NULL *
  **************************************************************************/
-#if OLD == 1
-void *nsat_dynamics(void *arg) {
-#else
 void nsat_dynamics(nsat_core *core) {
-#endif
     int stamps = 0;                          /* Time stamps for monitors */  
 
     /* Cast arg struct to nsat_core struct */
-#if OLD == 1 
-    nsat_core *core = (nsat_core *)arg;
-#endif
     stamps = (int) core->curr_time % core->core_pms.timestamp;
 
     /* Update state monitors (binary file) */
@@ -774,11 +763,6 @@ void nsat_dynamics(nsat_core *core) {
 #else
         update_state_monitor_online(core);
 #endif
-    }
-
-    /* Update state monitors (write hex format - ascii file) */
-    if ((core->mon_pms->mon_states_fpga) && (core->curr_time == 0)) {
-        store_fpga_states(core);
     }
 
     /* Update weight monitors */
@@ -804,15 +788,10 @@ void nsat_dynamics(nsat_core *core) {
     spike_events(core->vars->tX, core->nsat_neuron, core->nsat_events,
                  core->events, core->mon_events, core->trans_events,
                  core->curr_time, core->core_pms.num_neurons,
-                 core->core_id,
                  core->core_pms.num_states);
 
     /* Check for underflows */
     over_under_flow(core);
-
-#if OLD == 1
-     return NULL;
-#endif
 }
 
 
@@ -827,16 +806,8 @@ void nsat_dynamics(nsat_core *core) {
  * Returns :
  *  NULL *
  **************************************************************************/
-#if OLD == 1
-void *nsat_events_and_learning(void *arg) {
-#else
 void nsat_events_and_learning(nsat_core *core) {
-#endif
     int stamps = 0;                          /* Time stamps for monitors */  
-
-#if OLD == 1
-    nsat_core *core = (nsat_core *) arg;
-#endif
 
     stamps = (int) core->curr_time % core->core_pms.timestamp;
 
@@ -848,16 +819,14 @@ void nsat_events_and_learning(nsat_core *core) {
     if (core->nsat_events->length > 0) {
         accumulate_synaptic_events(&core->vars->acm, core->nsat_neuron,
                                    core->nsat_neuron, core->nsat_events,
-                                   core->core_pms.num_states,
-                                   core->core_id, core->curr_time);
+                                   core->core_pms.num_states);
     }
 
     /* Add external synaptic events if it's necessary */
     if (core->ext_events->length > 0) {
         accumulate_synaptic_events(&core->vars->acm, core->ext_neuron,
                                    core->nsat_neuron, core->ext_events,
-                                   core->core_pms.num_states,
-                                   core->core_id, core->curr_time);
+                                   core->core_pms.num_states);
     }
     
     /* Shift the synaptic weights according to a constant gain */
@@ -866,14 +835,18 @@ void nsat_events_and_learning(nsat_core *core) {
 
     /* Causal STDP update - IsLearning suppresses learning in validation */
     if (core->core_pms.is_learning_on) {
-
         /* Fill out external events spike list for STDP */
         expand_spike_list(core->ext_neuron, core->ext_events, &core->ext_caspk,
                           core->curr_time, core->core_pms.num_inputs,
                           core->core_pms.tstdpmax);
 
+        /* printf("Ext Extd Spikes:  %llu  ", core->curr_time); */
+        /* for (int l = 0; l < core->ext_caspk->length; ++l) */
+        /*     printf(" %llu ", core->ext_caspk->array[l]); */
+        /* printf("\n"); */
+
         /* Compute causal STDP on external events */
-        if (core->ext_caspk->capacity > 1 && core->syn->tot_ext_syn_num != 0) {
+        if (core->ext_caspk->length > 0 && core->syn->tot_ext_syn_num != 0) {
             causal_stdp(core->ext_neuron,
                         core->nsat_neuron,
                         core->vars->tX,
@@ -891,6 +864,11 @@ void nsat_events_and_learning(nsat_core *core) {
         expand_spike_list(core->nsat_neuron, core->nsat_events, &core->nsat_caspk,
                           core->curr_time, core->core_pms.num_neurons,
                           core->core_pms.tstdpmax);
+
+        /* printf("NSAT Extd Spikes:  %llu  ", core->curr_time); */
+        /* for (int l = 0; l < core->nsat_caspk->length; ++l) */
+        /*     printf(" %llu ", core->nsat_caspk->array[l]); */
+        /* printf("\n"); */
 
         /* Compute causal STDP on NSAT events */
         if (core->nsat_caspk->length > 0 && core->syn->tot_nsat_syn_num != 0) {
@@ -967,11 +945,6 @@ void nsat_events_and_learning(nsat_core *core) {
 #endif
     }
 
-    /* Update state monitors (write hex format - ascii file) */
-    /* if ((core->mon_pms->mon_states_fpga) && (stamps == 0)) { */
-    /*     store_fpga_states(core); */
-    /* } */
-
     /* Hard reset tX */ 
     memset(core->vars->tX, 0, core->core_pms.num_neurons * 
            core->core_pms.num_states*sizeof(int));
@@ -980,8 +953,4 @@ void nsat_events_and_learning(nsat_core *core) {
     array_list_clean(&core->ext_events, 1);
     array_list_clean(&core->nsat_caspk, 1);
     array_list_clean(&core->ext_caspk, 1);
-    
-#if OLD == 1
-    return NULL;
-#endif
 }

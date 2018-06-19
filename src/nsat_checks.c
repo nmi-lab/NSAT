@@ -44,9 +44,9 @@ extern inline bool is_power_of_two(int x);
  * Returns :
  *  True if all the recording IDs match neurons IDs, false otherwise
  **************************************************************************/
-extern inline bool check_recs_flags(unsigned long long *x, 
-                                    unsigned long long size,
-                                    unsigned long long num_neurons);
+extern inline bool check_recs_flags(int *x, 
+                                    int size,
+                                    int num_neurons);
 
 
 /* ************************************************************************
@@ -122,7 +122,7 @@ extern inline int check_compliance(bool flag, int y);
  *  false if the number (or any number in the input array) does/do not
  *  belong to the interval, true otherwise.
  **************************************************************************/
-extern inline bool check_intervals(int *x, int inf, int sup, unsigned int size);
+extern inline bool check_intervals(int *x, int inf, int sup, int size);
 
 
 /* ************************************************************************

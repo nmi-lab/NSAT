@@ -5,8 +5,8 @@ def read_from_file(fname):
     import struct as st
     with open(fname, "rb") as f:
         cont = f.read()
-    size = int(len(cont) / 4)
-    return np.array(st.unpack('i' * size, cont)).astype('int32')
+    size = int(len(cont) // 4)
+    return np.array(st.unpack('i' * size, cont)).astype('i')
 
 
 def read_from_file_weights(fname):
@@ -85,7 +85,7 @@ class C_NSATReader(NSATReader):
         for p, core_cfg in self.cfg:
             n_units = core_cfg.n_inputs + core_cfg.n_neurons
             ww = read_from_file_weights(
-                self.fname.synw + ('_core_' + str(p) + '.dat').encode('utf-8')).astype('i')
+                self.fname.synw + ('_core_' + str(p) + '.dat').encode('utf-8'))
             # len_ww = ww.shape[0]
             W = np.zeros((self.cfg.sim_ticks, n_units,
                           core_cfg.n_states), 'int')
@@ -180,18 +180,22 @@ class C_NSATReader(NSATReader):
 
     def read_c_nsat_raw_events(self):
         from struct import unpack
-        raw_data = []
+        raw_evts = []
         for p, core_cfg in self.cfg:
-            with open(self.fname.events + '_core_' + str(p) + '.dat', 'rb') as f:
+            with open(self.fname.events +
+                      ('_core_' + str(p) + '.dat').encode('utf-8'), 'rb') as f:
                 c = f.read()
-            size = int(len(c) // 8)
-            tmp = np.array(unpack('Q' * size, c), 'Q')
+            size = int(len(c) // 4)
+            tmp = np.array(unpack('i' * size, c), 'i')
             data = np.zeros((tmp.shape[0], ))
             size = tmp.shape[0] // 2
+            evts = np.zeros((size, 2))
             data[::2] = tmp[:size]
             data[1::2] = tmp[size:]
-            raw_data.append(data)
-        return raw_data
+            evts = np.flip(data.reshape(size, 2), 0)
+            # raw_data.append(data)
+            raw_evts.append(evts)
+        return raw_evts
 
     def read_c_nsat_syn_evo(self, pair=None):
         '''
@@ -203,7 +207,7 @@ class C_NSATReader(NSATReader):
                 fname = self.fname.synw + \
                     ('_core_' + str(p) + '.dat').encode('utf-8')
                 data = read_from_file(fname)
-                size = data.shape[0] // 5
+                size = int(data.shape[0] // 5)
                 data = data.reshape(size, 5)
 
                 w = []

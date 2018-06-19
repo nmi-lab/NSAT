@@ -30,7 +30,7 @@
  * Returns :
  *  The maximum element of the input integers array.
  **************************************************************************/
-extern inline unsigned long long max(int *x, int size);
+extern inline int max(int *x, int size);
 
 
 /* ************************************************************************

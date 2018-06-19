@@ -126,14 +126,14 @@ class C_NSATWriter(NSATWriter):
         cfg = self.cfg
         with open(self.fname.params, 'wb') as fh:
             # Global parameters
-            fh.write(pack(cfg.N_CORES, 'I'))
+            fh.write(pack(cfg.N_CORES, 'i'))
             fh.write(pack(cfg.single_core, '?'))
             if len(cfg.L1_connectivity) != 0:
                 cfg.routing_en = True
             fh.write(pack(cfg.routing_en, '?'))
-            fh.write(pack(cfg.sim_ticks, 'Q'))
-            fh.write(pack(cfg.seed, 'Q'))
-            fh.write(pack(cfg.s_seq, 'Q'))
+            fh.write(pack(cfg.sim_ticks, 'i'))
+            fh.write(pack(cfg.seed, 'i'))
+            fh.write(pack(cfg.s_seq, 'i'))
             fh.write(pack(cfg.is_bm_rng_on, '?'))
             fh.write(pack(cfg.is_clock_on, '?'))
             fh.write(pack(cfg.w_check, '?'))
@@ -144,22 +144,22 @@ class C_NSATWriter(NSATWriter):
                 fh.write(pack(cfg.ext_evts, '?'))
                 fh.write(pack(cfg.plasticity_en[p], '?'))
                 fh.write(pack(cfg.gated_learning[p], '?'))
-                fh.write(pack(core_cfg.n_inputs, 'Q'))
-                fh.write(pack(core_cfg.n_neurons, 'Q'))
-                fh.write(pack(core_cfg.n_states, 'I'))
-                fh.write(pack(core_cfg.n_groups, 'I'))
-                fh.write(pack(core_cfg.n_lrngroups, 'I'))
-                fh.write(pack(cfg.rec_deltat, 'Q'))
-                fh.write(pack(cfg.num_syn_ids_rec[p], 'Q'))
-                fh.write(pack(cfg.syn_ids_rec[p], 'Q'))
+                fh.write(pack(core_cfg.n_inputs, 'i'))
+                fh.write(pack(core_cfg.n_neurons, 'i'))
+                fh.write(pack(core_cfg.n_states, 'i'))
+                fh.write(pack(core_cfg.n_groups, 'i'))
+                fh.write(pack(core_cfg.n_lrngroups, 'i'))
+                fh.write(pack(cfg.rec_deltat, 'i'))
+                fh.write(pack(cfg.num_syn_ids_rec[p], 'i'))
+                fh.write(pack(cfg.syn_ids_rec[p], 'i'))
 
             # NSAT parameters
             for p, core_cfg in cfg:
                 for j in range(core_cfg.n_groups):
                     fh.write(pack(core_cfg.gate_lower[j], 'i'))
                     fh.write(pack(core_cfg.gate_upper[j], 'i'))
-                    fh.write(pack(core_cfg.learn_period[j], 'I'))
-                    fh.write(pack(core_cfg.learn_burnin[j], 'I'))
+                    fh.write(pack(core_cfg.learn_period[j], 'i'))
+                    fh.write(pack(core_cfg.learn_burnin[j], 'i'))
                     fh.write(pack(core_cfg.t_ref[j], 'i'))
                     fh.write(pack(core_cfg.modstate[j], 'i'))
                     fh.write(pack(core_cfg.prob_syn[j], 'i'))
@@ -177,8 +177,8 @@ class C_NSATWriter(NSATWriter):
                     fh.write(pack(core_cfg.Wgain[j], 'i'))
 
                 fh.write(pack(core_cfg.Xinit.flatten(), 'i'))
-                fh.write(pack(np.shape(cfg.spk_rec_mon[p])[0], 'Q'))
-                fh.write(pack(cfg.spk_rec_mon[p], 'Q'))
+                fh.write(pack(np.shape(cfg.spk_rec_mon[p])[0], 'i'))
+                fh.write(pack(cfg.spk_rec_mon[p], 'i'))
 
             # Learning parameters
             for p, core_cfg in cfg:
@@ -203,7 +203,6 @@ class C_NSATWriter(NSATWriter):
             # Monitor parameters
             # TODO: Separately for every core
             for p, core_cfg in cfg:
-                fh.write(pack(cfg.monitor_states, '?'))
                 fh.write(pack(cfg.monitor_states, '?'))
                 fh.write(pack(cfg.monitor_weights, '?'))
                 fh.write(pack(cfg.monitor_weights_final, '?'))
@@ -263,12 +262,12 @@ class C_NSATWriter(NSATWriter):
             with open(filename, 'wb') as fe:
                 for t in tms:
                     tc = tm_count[t]
-                    fe.write(pack([t, tc], 'Q'))
+                    fe.write(pack([t, tc], 'i'))
                     if tc > 0:
                         delta_pos = self._find_first(tm[pos_t:], t)
                         data = ad[(pos_t + delta_pos):(pos_t + delta_pos + tc)]
                         pos_t = pos_t + delta_pos + tc
-                        fe.write(pack(data, 'Q'))
+                        fe.write(pack(data, 'i'))
 
     def write_L0connectivity(self):
         self.write_L0_ptr_table()
@@ -288,15 +287,16 @@ class C_NSATWriter(NSATWriter):
                     dst_state = (cw.col // core_cfg.n_units).astype('uint64')
                     ptr_data = np.column_stack(
                         [src_nrn, dst_nrn, dst_state, cw.data])
-                    fw.write(pack(nonzero_elems, 'Q'))
-                    fw.write(pack(ptr_data, 'Q'))
+                    fw.write(pack(nonzero_elems, 'i'))
+                    fw.write(pack(ptr_data, 'i'))
                 else:  # Non sparse compatibility
                     cw = core_cfg.ptr_table
                     nonzero_elems = np.count_nonzero(cw)
                     c0 = np.argwhere(np.array(cw) != 0)
                     c1 = cw[np.array(cw) != 0]
                     c = np.column_stack([c0, c1])
-                    fw.write(pack(c, 'Q'))
+                    fw.write(pack(nonzero_elems, 'i'))
+                    fw.write(pack(c, 'i'))
 
     def write_L0_wgt_table(self):
         for p, core_cfg in self.cfg:
@@ -316,13 +316,13 @@ class C_NSATWriter(NSATWriter):
                 else:
                     nonzero_elems = len(np.shape(dsts))
                 nonzero_elems = len((dsts))
-                fw.write(pack(src[0], 'I'))
-                fw.write(pack(src[1], 'Q'))
-                fw.write(pack(nonzero_elems, 'Q'))
+                fw.write(pack(src[0], 'i'))
+                fw.write(pack(src[1], 'i'))
+                fw.write(pack(nonzero_elems, 'i'))
                 for dst in dsts:
                     x, y = dst
-                    fw.write(pack(dst[0], 'I'))
-                    fw.write(pack(dst[1], 'Q'))
+                    fw.write(pack(dst[0], 'i'))
+                    fw.write(pack(dst[1], 'i'))
 
 
 def check_network_sizes(core_cfg):
@@ -360,14 +360,14 @@ class C_NSATWriterSingleThread(C_NSATWriter):
         with open(filename, 'wb') as fe:
             for t in tms:
                 tc = tm_count[t]
-                fe.write(pack([t, tc], 'Q'))
+                fe.write(pack([t, tc], 'i'))
                 if tc > 0:
                     delta_pos = self._find_first(tm[pos_t:], t)
                     data = ad[(pos_t + delta_pos):(pos_t + delta_pos + tc)]
                     pos_t = pos_t + delta_pos + tc
                     data = list(
-                        zip(data >> CHANNEL_OFFSET, data & (ADDR_MASK)))
-                    fe.write(pack(data, 'Q'))
+                             zip(data >> CHANNEL_OFFSET, data & (ADDR_MASK)))
+                    fe.write(pack(data, 'i'))
 
 
 def read_from_file(fname):

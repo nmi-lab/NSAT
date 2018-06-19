@@ -34,9 +34,8 @@
  *  void
  **************************************************************************/
 void nsat_pms_groups_map_file(char *fname, nsat_core *cores,
-                              unsigned int num_cores) {
-    unsigned int p;
-    unsigned long long j;
+                              int num_cores) {
+    int p, res, j;
     int *map = NULL;
     FILE *fp = NULL;
 
@@ -46,7 +45,8 @@ void nsat_pms_groups_map_file(char *fname, nsat_core *cores,
     for (p = 0; p < num_cores; ++p) {
         map = alloc_zeros(int, cores[p].core_pms.num_neurons);
 
-        fread(map, sizeof(int), cores[p].core_pms.num_neurons, fp);
+        res = fread(map, sizeof(int), cores[p].core_pms.num_neurons, fp);
+        fread_test(res, cores[p].core_pms.num_neurons);
 
         if (max(map, cores[p].core_pms.num_neurons) > 
                 cores[p].core_pms.num_nsat_params_groups) {
@@ -82,9 +82,9 @@ void nsat_pms_groups_map_file(char *fname, nsat_core *cores,
  *  void
  **************************************************************************/
 void learning_pms_groups_map_file(char *fname, nsat_core *core,
-                                  unsigned int num_cores) {
-    unsigned int k, p; 
-    unsigned long long j;
+                                  int num_cores) {
+    int k, p, res; 
+    int j, tmp;
     int *map = NULL;
     FILE *fp = NULL;
 
@@ -93,10 +93,11 @@ void learning_pms_groups_map_file(char *fname, nsat_core *core,
 
     for(p = 0; p < num_cores; ++p) {
         if (core[p].core_pms.is_learning_on) {
-            map = alloc_zeros(int, core[p].core_pms.num_neurons *
-                                   core[p].core_pms.num_states);
-            fread(map, sizeof(int), core[p].core_pms.num_neurons *
-                                    core[p].core_pms.num_states, fp);
+            tmp = core[p].core_pms.num_neurons * (int) core[p].core_pms.num_states;
+            map = alloc_zeros(int, tmp);
+                                   
+            res = fread(map, sizeof(int), tmp, fp);
+            fread_test(res, tmp);
 
             if (max(map, core[p].core_pms.num_neurons) > 
                     core[p].core_pms.num_learning_pms_groups) {
@@ -134,27 +135,39 @@ void learning_pms_groups_map_file(char *fname, nsat_core *core,
  *  void
  **************************************************************************/
 void read_global_params(FILE *fp, global_params *pms) {
+    int res;
     int synapse_prec = 0;
-    fread(&pms->num_cores, sizeof(unsigned int), 1, fp);
+
+    res = fread(&pms->num_cores, sizeof(int), 1, fp);
+    fread_test(res, 1);
     if (pms->num_cores <= 0) {
         printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
         printf("No NSAT cores found!\n");
         printf("Please give the number of cores (>0)\n");
         exit(-1);
     }
-    fread(&pms->is_single_core, sizeof(bool), 1, fp);
-    fread(&pms->is_routing_on, sizeof(bool), 1, fp);
-    fread(&pms->ticks, sizeof(unsigned long long), 1, fp);
-    if(pms->ticks > ULLONG_MAX) {
+    res = fread(&pms->is_single_core, sizeof(bool), 1, fp);
+    fread_test(res, 1);
+    res = fread(&pms->is_routing_on, sizeof(bool), 1, fp);
+    fread_test(res, 1);
+    res = fread(&pms->ticks, sizeof(int), 1, fp);
+    fread_test(res, 1);
+    if(pms->ticks > INT_MAX) {
         printf(ANSI_COLOR_YELLOW "WARNING:  " ANSI_COLOR_RESET);
         printf("Simulation ticks overflow! Spike list will re-iterate!\n");
     }
-    fread(&pms->rng_init_state, sizeof(unsigned long long), 1, fp);
-    fread(&pms->rng_init_seq, sizeof(unsigned long long), 1, fp);
-    fread(&pms->is_bm_rng_on, sizeof(bool), 1, fp);
-    fread(&pms->is_clock_on, sizeof(bool), 1, fp);
-    fread(&pms->is_check_wlim_on, sizeof(bool), 1, fp);
-    fread(&synapse_prec, sizeof(int), 1, fp);
+    res = fread(&pms->rng_init_state, sizeof(int), 1, fp);
+    fread_test(res, 1);
+    res = fread(&pms->rng_init_seq, sizeof(int), 1, fp);
+    fread_test(res, 1);
+    res = fread(&pms->is_bm_rng_on, sizeof(bool), 1, fp);
+    fread_test(res, 1);
+    res = fread(&pms->is_clock_on, sizeof(bool), 1, fp);
+    fread_test(res, 1);
+    res = fread(&pms->is_check_wlim_on, sizeof(bool), 1, fp);
+    fread_test(res, 1);
+    res = fread(&synapse_prec, sizeof(int), 1, fp);
+    fread_test(res, 1);
     pms->syn_precision = pow(2, synapse_prec);
 } 
 
@@ -171,18 +184,24 @@ void read_global_params(FILE *fp, global_params *pms) {
  * Returns :
  *  void
  **************************************************************************/
-void read_core_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
-    unsigned long long size_v, tmp;
-    unsigned int i, p;
+void read_core_params(FILE *fp, nsat_core *core, int num_cores) {
+    int size_v, tmp, i;
+    int p, res;
 
     for (p = 0; p < num_cores; ++p) {
-        core[p].core_pms.ext_syn_rec_ids = alloc_list_id();
-        core[p].core_pms.nsat_syn_rec_ids = alloc_list_id();
+        core[p].core_pms.ext_syn_rec_ids = alloc(array_list, 1);
+        array_list_init(&core[p].core_pms.ext_syn_rec_ids, 0);
+        core[p].core_pms.nsat_syn_rec_ids = alloc(array_list, 1);
+        array_list_init(&core[p].core_pms.nsat_syn_rec_ids, 0);
         
-        fread(&core[p].core_pms.is_ext_evts_on, sizeof(bool), 1, fp);
-        fread(&core[p].core_pms.is_learning_on, sizeof(bool), 1, fp);
-        fread(&core[p].core_pms.is_learning_gated, sizeof(bool), 1, fp);
-        fread(&core[p].core_pms.num_inputs, sizeof(unsigned long long), 1, fp);
+        res = fread(&core[p].core_pms.is_ext_evts_on, sizeof(bool), 1, fp);
+        fread_test(res, 1);
+        res = fread(&core[p].core_pms.is_learning_on, sizeof(bool), 1, fp);
+        fread_test(res, 1);
+        res = fread(&core[p].core_pms.is_learning_gated, sizeof(bool), 1, fp);
+        fread_test(res, 1);
+        res = fread(&core[p].core_pms.num_inputs, sizeof(int), 1, fp);
+        fread_test(res, 1);
 
         if (check_compliance(core[p].core_pms.is_ext_evts_on,
                              core[p].core_pms.num_inputs) == -1) {
@@ -198,24 +217,29 @@ void read_core_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
             core[p].core_pms.num_inputs = 0;
         }
 
-        fread(&core[p].core_pms.num_neurons, sizeof(unsigned long long), 1, fp);
-        fread(&core[p].core_pms.num_states, sizeof(unsigned int), 1, fp);
+        res = fread(&core[p].core_pms.num_neurons, sizeof(int), 1, fp);
+        fread_test(res, 1);
+        res = fread(&core[p].core_pms.num_states, sizeof(int), 1, fp);
+        fread_test(res, 1);
 
-        fread(&core[p].core_pms.num_nsat_params_groups, sizeof(unsigned int), 1, fp);
+        res = fread(&core[p].core_pms.num_nsat_params_groups, sizeof(int), 1, fp);
+        fread_test(res, 1);
         if (core[p].core_pms.num_nsat_params_groups > N_NSATGROUPS) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
             printf("CORE #%d: Invalid number of NSAT parameters groups!\n", p);
             exit(-1);
         }
 
-        fread(&core[p].core_pms.num_learning_pms_groups, sizeof(unsigned int), 1, fp);
+        res = fread(&core[p].core_pms.num_learning_pms_groups, sizeof(int), 1, fp);
+        fread_test(res, 1);
         if (core[p].core_pms.num_learning_pms_groups > N_LRNGROUPS) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
             printf("CORE #%d: Invalid number of NSAT parameters groups!\n", p);
             exit(-1);
         }
 
-        fread(&core[p].core_pms.timestamp, sizeof(unsigned long long), 1, fp);
+        res = fread(&core[p].core_pms.timestamp, sizeof(int), 1, fp);
+        fread_test(res, 1);
         if (check_compliance(core[p].core_pms.is_learning_on,
                              core[p].core_pms.num_learning_pms_groups) == -1) {
             printf(ANSI_COLOR_YELLOW "WARNING:  " ANSI_COLOR_RESET);
@@ -230,7 +254,8 @@ void read_core_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
             core[p].core_pms.num_learning_pms_groups = 0;
         }
 
-        fread(&size_v, sizeof(unsigned long long), 1, fp);
+        res = fread(&size_v, sizeof(int), 1, fp);
+        fread_test(res, 1);
         if (size_v > core[p].core_pms.num_neurons +
                      core[p].core_pms.num_inputs) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
@@ -239,13 +264,13 @@ void read_core_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
         }
 
         for (i = 0; i < size_v; ++i) {
-            fread(&tmp, sizeof(unsigned long long), 1, fp);
+            res = fread(&tmp, sizeof(int), 1, fp);
+            fread_test(res, 1);
             if (tmp < core[p].core_pms.num_inputs) { 
-                push_id(&core[p].core_pms.ext_syn_rec_ids, tmp);
-            }
-            else {
+                array_list_push(&core[p].core_pms.ext_syn_rec_ids, tmp, 0, 0);
+            } else {
                 tmp = tmp - core[p].core_pms.num_inputs;
-                push_id(&core[p].core_pms.nsat_syn_rec_ids, tmp);
+                array_list_push(&core[p].core_pms.nsat_syn_rec_ids, tmp, 0, 0);
             }
         }
     }
@@ -263,19 +288,19 @@ void read_core_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
  * Returns :
  *  void
  **************************************************************************/
-void read_nsat_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
-    unsigned int i, p; 
-    unsigned int size_v, size_m;
-    unsigned long long size_i, size_n = 0;
+void read_nsat_params(FILE *fp, nsat_core *core, int num_cores) {
+    int i, p; 
+    int size_v, size_m;
+    int size_i, size_n = 0;
 
     for (p = 0; p < num_cores; ++p) {
         /* Compute proper sizes for NSAT parameters vectors */
         size_m = core[p].core_pms.num_states * core[p].core_pms.num_states;
         size_v = core[p].core_pms.num_states;
-        size_i = (unsigned long long) core[p].core_pms.num_states * core[p].core_pms.num_neurons;
+        size_i = (int) core[p].core_pms.num_states * core[p].core_pms.num_neurons;
 
         for(i = 0; i < core[p].core_pms.num_nsat_params_groups; ++i) {
-            fread(&core[p].nsat_pms[i].gate_low, sizeof(int), 1, fp);           
+            fread(&core[p].nsat_pms[i].gate_low, sizeof(int), 1, fp);
 
             fread(&core[p].nsat_pms[i].gate_upper, sizeof(int), 1, fp);           
             
@@ -347,11 +372,11 @@ void read_nsat_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
         fread(core[p].vars->xinit, sizeof(STATETYPE), size_i, fp);
 
         /* Read the recording flags (ON/OFF) for every neuron (NSAT) */
-        fread(&size_n, sizeof(unsigned long long), 1, fp);      /* number of ON recs */
+        fread(&size_n, sizeof(int), 1, fp);      /* number of ON recs */
         core[p].core_pms.num_recs_on = size_n;   /* Storage for other uses */
-        core[p].vars->rec_spk_on = alloc(unsigned long long, size_n);
+        core[p].vars->rec_spk_on = alloc(int, size_n);
         mem_test(core[p].vars->rec_spk_on);
-        fread(core[p].vars->rec_spk_on, sizeof(unsigned long long), size_n, fp);
+        fread(core[p].vars->rec_spk_on, sizeof(int), size_n, fp);
         if (!check_recs_flags(core[p].vars->rec_spk_on, size_n,
                               core[p].core_pms.num_neurons)) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
@@ -374,10 +399,10 @@ void read_nsat_params(FILE *fp, nsat_core *core, unsigned int num_cores) {
  * Returns :
  *  void
  **************************************************************************/
-void read_lrn_params(FILE *fp, nsat_core *core, unsigned int num_cores) 
+void read_lrn_params(FILE *fp, nsat_core *core, int num_cores) 
 {
-    unsigned int p;
-    unsigned long long i;
+    int p;
+    int i;
 
     for (p = 0; p < num_cores; ++p) {
         if (core[p].core_pms.is_learning_on) {
@@ -421,12 +446,11 @@ void read_lrn_params(FILE *fp, nsat_core *core, unsigned int num_cores)
  * Returns :
  *  void
  **************************************************************************/
-void read_monitor_params(FILE *fp, nsat_core *cores, unsigned int num_cores) {
-    unsigned int p;
+void read_monitor_params(FILE *fp, nsat_core *cores, int num_cores) {
+    int p;
 
     for (p = 0; p < num_cores; ++p) {
         fread(&cores[p].mon_pms->mon_states, sizeof(bool), 1, fp);
-        fread(&cores[p].mon_pms->mon_states_fpga, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_weights, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_final_weights, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_spikes, sizeof(bool), 1, fp);
@@ -446,8 +470,8 @@ void read_monitor_params(FILE *fp, nsat_core *cores, unsigned int num_cores) {
  *  void
  **************************************************************************/
 void print_params2file(fnames *fn, nsat_core *core, global_params *g_pms) {
-    unsigned long long j;
-    unsigned int k, l, p;
+    int j;
+    int k, l, p;
     FILE *fp = NULL;
     
     if(!(fp = fopen(fn->check_pms, "w"))) {
@@ -477,7 +501,7 @@ void print_params2file(fnames *fn, nsat_core *core, global_params *g_pms) {
     fprintf(fp, "Routing scheme is ");
     print_enabled_or_disabled(fp, g_pms->is_routing_on);
     fprintf(fp, "\n");
-    fprintf(fp, "Total number of simulation ticks: %llu\n", g_pms->ticks);
+    fprintf(fp, "Total number of simulation ticks: %d\n", g_pms->ticks);
     fprintf(fp, "Check synaptic strengths boundary: ");
     print_enabled_or_disabled(fp, g_pms->is_check_wlim_on);
     fprintf(fp, "\n");
@@ -485,8 +509,8 @@ void print_params2file(fnames *fn, nsat_core *core, global_params *g_pms) {
     fprintf(fp, "RNG: ");
     print_rng_choice(fp, g_pms->is_bm_rng_on);
     fprintf(fp, "\n");
-    fprintf(fp, "RNG seed: %llu\n", g_pms->rng_init_state);
-    fprintf(fp, "RNG initial sequence: %llu\n", g_pms->rng_init_seq);
+    fprintf(fp, "RNG seed: %d\n", g_pms->rng_init_state);
+    fprintf(fp, "RNG initial sequence: %d\n", g_pms->rng_init_seq);
     fprintf(fp, "\n");
     fprintf(fp, "Benchmark clock is ");
     print_enabled_or_disabled(fp, g_pms->is_clock_on);
@@ -494,9 +518,9 @@ void print_params2file(fnames *fn, nsat_core *core, global_params *g_pms) {
 
     for (p = 0; p < g_pms->num_cores; ++p) {
         fprintf(fp, "+++++++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-        fprintf(fp, "Core ID: %u\n", p);
-        fprintf(fp, "Total number of inputs: %llu\n", core[p].core_pms.num_inputs);
-        fprintf(fp, "Total number of neurons: %llu\n", core[p].core_pms.num_neurons);
+        fprintf(fp, "Core ID: %d\n", p);
+        fprintf(fp, "Total number of inputs: %d\n", core[p].core_pms.num_inputs);
+        fprintf(fp, "Total number of neurons: %d\n", core[p].core_pms.num_neurons);
         fprintf(fp, "Total number of states/neuron: %d\n", core[p].core_pms.num_states);
         fprintf(fp, "Dimension of NSAT parameters space: %d\n", core[p].core_pms.num_nsat_params_groups);
         fprintf(fp, "Dimension of NSAT learning parameters space: %d\n", core[p].core_pms.num_learning_pms_groups);
@@ -513,7 +537,7 @@ void print_params2file(fnames *fn, nsat_core *core, global_params *g_pms) {
         fprintf(fp, "==================================\n");
         for (j = 0; j < core[p].core_pms.num_neurons; ++j) {
             fprintf(fp, "--------- Neuron ID ---------\n");
-            fprintf(fp, "%llu \n", j);
+            fprintf(fp, "%d \n", j);
 
             fprintf(fp, "--------- Threshold value ---------\n");
             fprintf(fp, "%d \n", core[p].nsat_neuron[j].nsat_ptr->x_thr);

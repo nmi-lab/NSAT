@@ -17,7 +17,7 @@ from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 
 def SimSpikingStimulus(t_sim=None):
     SL = pyST.SpikeList(id_list=[0, 1, 2, 3])
-    spk_train0 = [63, 120]
+    spk_train0 = [60, 110]
     spk_train1 = [10, 75, 140]
     spk_train2 = [15, 80, 135]
     spk_train3 = [20, 130]
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     cfg.core_cfgs[0].modstate[1] = 2
 
     # Parameters for the STDP kernel function
-    rNLRN_GROUPS = list(range(nsat.N_LRNGROUPS))
+    rNLRN_GROUPS = list(range(8))
     cfg.core_cfgs[0].tstdp = np.array([64 for _ in rNLRN_GROUPS], 'int')
     cfg.core_cfgs[0].tca = np.array([[16, 36] for _ in rNLRN_GROUPS], 'int')
     cfg.core_cfgs[0].hica = np.array([[1, 0, -1] for _ in rNLRN_GROUPS], 'int')
@@ -177,7 +177,7 @@ if __name__ == '__main__':
     np.save('w2', w2)
     # w = c_nsat_reader.read_synaptic_weights()
 
-    out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
+    out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
                                    sim_ticks=sim_ticks)
     np.save('spk0', out_spikelist[0].spike_times)
     np.save('spk1', out_spikelist[1].spike_times)
@@ -212,29 +212,30 @@ if __name__ == '__main__':
     ax.set_ylabel('$x_m$')
 
     fig = plt.figure()
+    ax = fig.add_subplot(4, 1, 1)
     for i in range(4):
-        ax = fig.add_subplot(4, 1, 1)
         for i in out_spikelist[0].spike_times:
-            plt.axvline(i, color='r', lw=1, zorder=0)
+            ax.axvline(i, color='k', lw=1, zorder=0, label='lal')
         ax.set_ylabel('Spikes')
         ax.set_xlim([0, sim_ticks])
 
-        ax = fig.add_subplot(4, 1, 2)
-        plt.step(w0, 'r', lw=2, zorder=10, where='post')
+        # ax = fig.add_subplot(4, 1, 2)
+        ax.step(w0, 'r', lw=2, zorder=10, where='post', label='lala')
         for i in out_spikelist[1].spike_times:
-            plt.axvline(i, color='k', lw=1, zorder=0)
-        ax.set_ylabel('Spikes')
-        ax.set_xlim([0, sim_ticks])
+            ax.axvline(i, color='k', lw=1, zorder=0, label='dsds')
+        # ax.set_ylabel('Spikes')
+        # ax.set_xlim([0, sim_ticks])
 
-        ax = fig.add_subplot(4, 1, 3)
-        plt.step(w1, 'r', lw=2, zorder=10, where='post')
+        # ax = fig.add_subplot(4, 1, 3)
+        ax.step(w1, 'r', lw=2, zorder=10, where='post', label='ta')
         for i in out_spikelist[2].spike_times:
-            plt.axvline(i, color='k', lw=1, zorder=0)
-        ax.set_xlim([0, sim_ticks])
+            ax.axvline(i, color='k', lw=1, zorder=0, label='dss')
+        # ax.set_xlim([0, sim_ticks])
 
-        ax = fig.add_subplot(4, 1, 4)
-        plt.step(w2, 'r', lw=2, zorder=10, where='post')
+        # ax = fig.add_subplot(4, 1, 4)
+        ax.step(w2, 'r', lw=2, zorder=10, where='post', label='ar')
         for i in out_spikelist[3].spike_times:
-            plt.axvline(i, color='k', lw=1, zorder=0)
-        ax.set_xlim([0, sim_ticks])
+            ax.axvline(i, color='k', lw=1, zorder=0, label='dadsa')
+        # ax.set_xlim([0, sim_ticks])
+    ax.set_xlim([0, sim_ticks])
     plt.show()

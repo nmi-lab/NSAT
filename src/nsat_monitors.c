@@ -64,13 +64,6 @@ void open_cores_monitor_files(nsat_core *core, fnames *fname, size_t num_cores) 
             dealloc(filename);
         }
 
-        /* Intialize state monitors for FPGA */
-        if (core[p].mon_pms->mon_states_fpga) {
-            filename = gen_fname(fname->states, p, 0);
-            core[p].files->fsa = open_monitor_file(filename);
-            dealloc(filename);
-        }
-
         /* Initialize weights monitors */
         if (core[p].mon_pms->mon_weights) {
             filename = gen_fname(fname->synw, p, 1);
@@ -104,9 +97,6 @@ void close_cores_monitor_files(nsat_core *core, size_t num_cores) {
         if (core[p].mon_pms->mon_states) {
             fclose(core[p].files->fs);
         }
-        if (core[p].mon_pms->mon_states_fpga) {
-            fclose(core[p].files->fsa);
-        }
         if (core[p].mon_pms->mon_weights) {
             fclose(core[p].files->fw);
         }
@@ -125,8 +115,8 @@ void close_cores_monitor_files(nsat_core *core, size_t num_cores) {
  *  void
  **************************************************************************/
 void update_state_monitor_file(nsat_core *core) {
-    unsigned long long j;
-    unsigned int k;
+    int j;
+    int k;
 
     fwrite(&core->curr_time, sizeof(int), 1, core->files->fs);
     for(j = 0; j < core->core_pms.num_neurons; ++j) {
@@ -151,8 +141,8 @@ void update_state_monitor_file(nsat_core *core) {
  *  void
  **************************************************************************/
 void update_state_monitor_online(nsat_core *core) {
-    unsigned long long j;
-    unsigned int k;
+    int j;
+    int k;
 
     fwrite(&core->curr_time, sizeof(int), 1, core->files->fs);
     for(j = 0; j < core->core_pms.num_neurons; ++j) {
@@ -163,32 +153,6 @@ void update_state_monitor_online(nsat_core *core) {
                        1,
                        core->files->fs);
             }
-        }
-    }
-}
-
-
-/* ************************************************************************
- * STORE_FPGA_STATES: This functions writes at every predefined
- * time checkpoint all neurons states into a ascii file in hex format.
- * Output files from this function are used with FPGAs.
- *
- * Args : 
- *  core (nsat_core *)  : Core struct pointer
- *
- * Returns :
- *  void
- **************************************************************************/
-void store_fpga_states(nsat_core *core) {
-    unsigned long long j;
-    unsigned int k;
-    
-    for(j = 0; j < core->core_pms.num_neurons; ++j) {
-        for(k = 0; k < core->core_pms.num_states; ++k) {
-            fprintf(core->files->fsa, "%08llx  ", core->curr_time);
-            fprintf(core->files->fsa, "%08llx  ", j);
-            fprintf(core->files->fsa, "%08x  ", k);
-            fprintf(core->files->fsa, "%08x\n", core->nsat_neuron[j].s[k].x);
         }
     }
 }
@@ -233,37 +197,32 @@ void update_monitor_next_state(int *x,
  *  void
  **************************************************************************/
 void update_synaptic_strength_monitor_file(nsat_core *core) {
-    unsigned int k;
-    unsigned long long tmp, tmp2;
-    unsigned long long i, num_inputs = core->core_pms.num_inputs;
-    unsigned long long num_neurons = core->core_pms.num_neurons;
-    unsigned int num_states = core->core_pms.num_states;
+    int k, id, tmp2;
+    int j, i, num_inputs = core->core_pms.num_inputs;
+    int num_neurons = core->core_pms.num_neurons;
+    int num_states = core->core_pms.num_states;
     syn_list_node *ptr = NULL;
-    id_list_node *ptr_id = NULL;
 
     /* Write external neurons weights */
     for (k = 0; k < num_states; ++k) {
         for(i = 0; i< num_inputs; ++i) {    /* all pre neurons */
             ptr = core->ext_neuron[i].syn_ptr[k]->head;  /* pre neuron */
             while (ptr != NULL) {   /*  loop over post of pre neuron */
-                ptr_id = core->core_pms.ext_syn_rec_ids->head; /* init targets */
-                while (ptr_id != NULL) {  /* loop over targets */
+                for (j = 0; j < core->core_pms.ext_syn_rec_ids->length; ++j) {
+                    id = core->core_pms.ext_syn_rec_ids->array[j];
                     /* Time */
-                    tmp = ptr_id->id; 
-                    if (tmp == ptr->id){   /* if target == post of pre neuron then write */
-                        fwrite(&core->curr_time, sizeof(unsigned long long), 1, core->files->fw);
+                    if (id == ptr->id){   /* if target == post of pre neuron then write */
+                        fwrite(&core->curr_time, sizeof(int), 1, core->files->fw);
                         /* Source */
-                        fwrite(&i, sizeof(unsigned long long), 1, core->files->fw);
+                        fwrite(&i, sizeof(int), 1, core->files->fw);
                         /* Destination */
-                        tmp = tmp + num_inputs;
-                        fwrite(&tmp, sizeof(unsigned long long), 1, core->files->fw);
+                        id += num_inputs;
+                        fwrite(&id, sizeof(int), 1, core->files->fw);
                         /* State */
-                        fwrite(&k, sizeof(unsigned int), 1, core->files->fw);
+                        fwrite(&k, sizeof(int), 1, core->files->fw);
                         /* Weight value */
-                        /* ptr->W is the weight from pre to post */
                         fwrite(ptr->w_ptr, sizeof(WTYPE), 1, core->files->fw);
                     }
-                    ptr_id = ptr_id->next;
                 }
                 ptr = ptr->next;
             }
@@ -274,25 +233,22 @@ void update_synaptic_strength_monitor_file(nsat_core *core) {
         for(i = 0; i < num_neurons; ++i) {   /* all pre neurons */
             ptr = core->nsat_neuron[i].syn_ptr[k]->head;  /* pre neuron  */
             while (ptr != NULL) {   /* loop over post of pre neuron  */
-                ptr_id = core->core_pms.nsat_syn_rec_ids->head;   /* init targets  */
-                while (ptr_id != NULL) {  /* loop over targets */
-                    /* Time */
-                    tmp = ptr_id->id; 
-                    if (tmp == ptr->id){  /* if target == post of pre neuron then write */
-                        fwrite(&core->curr_time, sizeof(unsigned long long), 1, core->files->fw);
+                for (j = 0; j < core->core_pms.nsat_syn_rec_ids->length; ++j) {
+                    id = core->core_pms.nsat_syn_rec_ids->array[j];
+                    if (id == ptr->id){  /* if target == post of pre neuron then write */
+                        /* Time */
+                        fwrite(&core->curr_time, sizeof(int), 1, core->files->fw);
                         /* Source */
                         tmp2 = i + num_inputs;
-                        fwrite(&tmp2, sizeof(unsigned long long), 1, core->files->fw);
+                        fwrite(&tmp2, sizeof(int), 1, core->files->fw);
                         /* Destination */
-                        tmp = tmp + num_inputs;
-                        fwrite(&tmp, sizeof(unsigned long long), 1, core->files->fw);
+                        id += num_inputs;
+                        fwrite(&id, sizeof(int), 1, core->files->fw);
                         /* State */
-                        fwrite(&k, sizeof(unsigned int), 1, core->files->fw);
+                        fwrite(&k, sizeof(int), 1, core->files->fw);
                         /* Weight value */
-                        /* ptr->W is the weight from pre to post */
                         fwrite(ptr->w_ptr, sizeof(WTYPE), 1, core->files->fw); 
                     }
-                    ptr_id = ptr_id->next;
                 }
                 ptr = ptr->next;
             }
@@ -302,7 +258,7 @@ void update_synaptic_strength_monitor_file(nsat_core *core) {
 
 
 void open_online_spike_monitor(nsat_core **cores, fnames *fname){
-    unsigned int p;
+    int p;
     char *filename=NULL;                     /* Tmp filename */  
 
     for (p = 0; p < (*cores)[0].g_pms->num_cores; ++p) {

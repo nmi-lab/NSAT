@@ -52,7 +52,7 @@ char *gen_fname(char *ifname, int x, int flag)
 }
 
 
-char *gen_ext_evts_fname(char *fname, unsigned int id)
+char *gen_ext_evts_fname(char *fname, int id)
 {
     char ext[10] = ".dat", postfix[20] = "_core_";
     char *tmp = NULL;
