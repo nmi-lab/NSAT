@@ -19,9 +19,9 @@ else
     echo "Directories created!"
     echo ""
     echo "Install pyNCSre!"
-    pip install --upgrrade pyNCSre --user
+    pip install --upgrade pyNCSre --user
     pip2 install --upgrade pyNCSre --user
-    echo "puNCSre has been installed!"
+    echo "pyNCSre has been installed!"
 
     echo ""
     echo "Install pyNSAT library!"
@@ -50,5 +50,5 @@ else
 
     echo ""
     echo "Now you can use NSAT!"
-    echo "Example:  python tests/pythons/test_reset.py"
+    echo "Example:  python tests/python/test_reset.py"
 fi
