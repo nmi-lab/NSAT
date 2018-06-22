@@ -325,9 +325,7 @@ class C_NSATWriter(NSATWriter):
     def write_L1connectivity(self):
         L1 = self.cfg.L1_connectivity
         #count all outward connections (slow)
-        n = 0
-        for it in L1.values():
-            n+=len(it)
+        n = len(L1)
         with open(self.fname.l1_conn, 'wb') as fw:
             fw.write(pack(n, 'i'))
             for src, dsts in L1.items():
