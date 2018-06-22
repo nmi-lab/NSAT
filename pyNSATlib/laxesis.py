@@ -24,6 +24,8 @@ import pyNSATlib as nsat
 from pyNSATlib.NSATlib import check_weight_matrix, coreConfig
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 
+POPCOUNTER = 0
+
 
 def connections_dense_to_sparse_nonshared(W, CW):
     from scipy.sparse import csr_matrix
@@ -255,9 +257,12 @@ class Population(object):
         - setup: NeuroSetup to init the population
         - neuron_cfg: neuron_cfg string to init the population, e.g. 'pixel'
         """
+        global POPCOUNTER
+        self.id = POPCOUNTER
+        POPCOUNTER+=1
+
         if name is None or name == '':
-            self.name = "Core:{0}_Size:{1}_Ntype:{2}".format(
-                core, len(addr), neuron_cfg)
+            self.name = "Pop{0}".format(self.id)
         else:
             self.name = name
         self.addr = addr
@@ -270,7 +275,7 @@ class Population(object):
         self.setup = setup
 
     def __repr__(self):
-        return self.name
+        return self.name+"({0})".format(len(self))
 
 
 def loccon2d(imsize=28, ksize=5, stride=2, init=5):
@@ -367,7 +372,7 @@ class Connection(object):
         return self.dst_bgn + len(self.dst_pop)
 
     def __repr__(self):
-        return "src_pop: {0} -> dst_pop: {1}".format(self.src_pop.name, self.dst_pop)
+        return "src_pop: {0} -> dst_pop: {1} :: state {2}".format(self.src_pop, self.dst_pop, self.dst_state)
 
     def connect(self, ptr_table, wgt_table):
         self.ptr_table = ptr_table
@@ -380,8 +385,9 @@ class Connection(object):
             # merge following two
             self.is_external = True
             # TODO: make only L1 connections that exist
-            popin = self.setup.create_external_population(
-                len(self.src_pop), self.dst_pop.core)
+            popin = self.setup.create_external_population(len(self.src_pop),
+                                                          self.dst_pop.core,
+                                                          self.src_pop.name+"_EXT")
             key = (self.src_pop.core, self.dst_pop.core)
             L1 = self.setup.connections_intercore
             if key not in L1:

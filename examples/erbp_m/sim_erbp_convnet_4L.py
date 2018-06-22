@@ -22,8 +22,8 @@ from load_mnist import *
 import time
 from pyNSATlib.laxesis import *
 
-N_FEAT1 = 4  # 16
-N_FEAT2 = 8  # 32
+N_FEAT1 = 16  # 16
+N_FEAT2 = 32  # 32
 stride1 = 1
 stride2 = 2
 ksize = 3
@@ -46,14 +46,14 @@ Np = 10
 Ng2 = Np
 Ng3 = Np
 
-N_CORES = 1
+N_CORES = 4
 n_mult = 1
 t_sample_test = 3000
 t_sample_train = 1500
 nepochs = 1
 N_train = 500
 N_test = 100
-test_every = 2
+test_every = 1
 inp_fact = 25
 
 sim_ticks = N_train*t_sample_train
@@ -81,13 +81,11 @@ setup       = NSATSetup(ncores = N_CORES)
 pop_data    = setup.create_external_population(Nv, 0)
 pop_lab     = setup.create_external_population(Nl, 0)
 pop_conv1   = setup.create_population(n = Nconv1, core = 0, neuron_cfg = erf_ntype)
-pop_conv2   = setup.create_population(n = Nconv2, core = 0, neuron_cfg = erf_ntype)
-pop_conv3   = setup.create_population(n = Nconv3, core = 0, neuron_cfg = erf_ntype)
-pop_conv4   = setup.create_population(n = Nconv4, core = 0, neuron_cfg = erf_ntype)
-pop_hid     = setup.create_population(n = Nh, core = 0, neuron_cfg = erf_ntype)
+pop_conv2   = setup.create_population(n = Nconv2, core = 1, neuron_cfg = erf_ntype)
+pop_conv3   = setup.create_population(n = Nconv3, core = 2, neuron_cfg = erf_ntype)
+pop_conv4   = setup.create_population(n = Nconv4, core = 3, neuron_cfg = erf_ntype)
+pop_hid     = setup.create_population(n = Nh, core = 3, neuron_cfg = erf_ntype)
 pop_out     = setup.create_population(n = Nl, core = 0, neuron_cfg = output_ntype)
-pop_err_pos = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype)
-pop_err_neg = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype)
 
 Connection(setup, pop_data, pop_conv1, 0).connect_conv2dbank(inputsize, Nchannel, N_FEAT1, stride1, ksize)
 Connection(setup, pop_conv1, pop_conv2, 0).connect_conv2dbank(inputsize, N_FEAT1, N_FEAT1, stride2, ksize)
@@ -96,7 +94,10 @@ Connection(setup, pop_conv3, pop_conv4, 0).connect_conv2dbank(inputsize//stride2
 Connection(setup, pop_conv4, pop_hid, 0).connect_random_uniform(low=-16, high=16)
 Connection(setup, pop_hid, pop_out, 0).connect_random_uniform(low=-4, high=4)
 
-#eRBP related connections
+#eRBP related connections and populations
+pop_err_pos = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype)
+pop_err_neg = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype)
+
 Connection(setup, pop_out, pop_err_pos, 0).connect_one2one(-wpg)
 Connection(setup, pop_out, pop_err_neg, 0).connect_one2one(wpg)
 
@@ -194,7 +195,7 @@ c_nsat_writer_train = nsat.C_NSATWriter(cfg_train, path=exp_name,
 c_nsat_writer_train.write()
 
 # c_nsat_writer_test = nsat.C_NSATWriter(cfg_test, path=exp_name_test,prefix='')
-c_nsat_writer_test = nsat.C_NSATWriter(cfg_test, path=exp_name,
+c_nsat_writer_test = nsat.C_NSATWriter(cfg_test, path=exp_name_test,
                                                   prefix='')
 c_nsat_writer_test.write()
 
@@ -220,7 +221,6 @@ if __name__ == '__main__':
         nsat.run_c_nsat(fname_train)
         print(('Run took {0} seconds'.format(time.time()-t0)))
 
-
         for j in range(setup.ncores):
             #train->test
             shutil.copy(exp_name+'/_shared_mem_core_{0}.dat'.format(j), exp_name_test+'/_wgt_table_core_{0}.dat'.format(j))
@@ -240,11 +240,5 @@ if __name__ == '__main__':
                 print(exp_name)
                 print(pip)
 
-    try:
-        import experimentTools as et
-        d=et.mksavedir(pre='Results_Scripts/')
-        et.save(pip, 'pip.pkl')
-        et.annotate('res',text=str(pip))
-    except ImportError:
-        print('saving disabled due to missing experiment tools')
+
      

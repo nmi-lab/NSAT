@@ -321,8 +321,9 @@ if __name__ == '__main__':
                             fname_test.syn_wgt_table+'_core_0.dat',)
         # res = c_nsat_reader_train.read_c_nsat_raw_events()[0]
         nsat.run_c_nsat(c_nsat_writer_test.fname)
-        test_spk = nsat.importAER(c_nsat_reader_test.read_c_nsat_raw_events()[0],
-                                  sim_ticks=sim_ticks_test)
+        test_spk = c_nsat_reader_test.read_spikelist(
+                sim_ticks=sim_ticks_test,
+                core=0)
         sl = test_spk.id_slice([16, 17])
         mm = np.argmax(sl.firing_rate(time_bin=test_duration), axis=0)[::2]
         print(100*sum(labels[::2] != mm)/32.0)
@@ -340,59 +341,3 @@ if __name__ == '__main__':
     WT = W_new[(Ns+Ne+Ni+Nv):, (Ns+Ne+Ni):(Ns+Ne+Ni+Nv), 1]
     np.save('/tmp/weights_full', W)
 
-    # fog = plt.figure()
-    # ax = fog.add_subplot(111)
-    # plt.imshow(W-WT.T, interpolation='nearest', cmap=plt.cm.gray,
-    #            aspect='auto')
-    # plt.colorbar()
-
-    # fig = plt.figure()
-    # ax = fig.add_subplot(111)
-    # ax.imshow(__tile_raster_images(W_new[r:c-2, c:, 1].T, (4, 4), (8, 8),
-    #                                tile_spacing=(2, 2)), cmap=plt.cm.gray)
-
-    # out_spikelist = nsat.importAER(nsat.read_from_file(
-    #     c_nsat_writer_train.fname.events+'_core_0.dat'),
-    #     sim_ticks=sim_ticks_train,
-    #     id_list=[0])
-
-    # fig = plt.figure()
-    # ax0 = fig.add_subplot(111)
-
-    # ids = [i for i in range(20)]
-    # SL_train.raster_plot(display=ax0, kwargs={'color': 'b'})
-    # out_spikelist.raster_plot(display=ax0, kwargs={'color': 'k'})
-
-    # ttT, adT = SL_train.convert()
-    # ttN, adN = out_spikelist.convert()
-    # ttN = np.array(ttN, 'i')
-    # adN = np.array(adN, 'i')
-
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(111)
-    # ax1.plot(ttN[adN < 16], adN[adN < 16], 'x', zorder=10)
-    # ax1.plot(ttT, adT-2, 'r.', zorder=0, alpha=0.5)
-    # ax1.plot(ttN[adN == 16], adN[adN == 16], 'c.')
-    # ax1.plot(ttN[adN == 17], adN[adN == 17], 'm.')
-
-    # test_spk = nsat.importAER(nsat.read_from_file(c_nsat_writer_test.fname.events+'_core_0.dat'),
-    #                           sim_ticks=sim_ticks_test)
-
-    # ttT, adT = SL_test.convert()
-    # ttN, adN = test_spk.convert()
-    # ttN = np.array(ttN, 'i')
-    # adN = np.array(adN, 'i')
-
-    # fig = plt.figure()
-    # ax1 = fig.add_subplot(111)
-    # ax1.plot(ttN[adN < 16], adN[adN < 16], '.')
-    # ax1.plot(ttT, adT-2, 'r.')
-    # ax1.plot(ttN[adN == 16], adN[adN == 16], 'c.')
-    # ax1.plot(ttN[adN == 17], adN[adN == 17], 'm.')
-
-    # fig = plt.figure()
-    # ax2 = fig.add_subplot(111)
-    # SL_test.raster_plot(display=ax2, kwargs={'color': 'r'})
-    # # ids = [i for i in range(0, 16)]
-    # test_spk.raster_plot(display=ax2, kwargs={'color': 'k'})
-    # plt.show()
