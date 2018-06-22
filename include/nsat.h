@@ -446,7 +446,6 @@ inline void copy_states(unit **dest,
                         int size_x,
                         int size_y) {
     int j, k;
-
     for(j = 0; j < size_x; ++j) {
         for(k = 0; k < size_y; ++k) {
             (*dest)[j].s[k].x = src[j*size_y+k];

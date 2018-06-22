@@ -31,7 +31,7 @@ void *nsat_thread(void *args)
 
     nsat_core *core = (nsat_core *)args;
     clock_t t_s, t_f;
-    int id;
+    int id, err_flag = false;
     FILE *fext;
 
     if (core->core_pms.is_ext_evts_on) {
@@ -39,12 +39,13 @@ void *nsat_thread(void *args)
         if (!fext) {
             printf(ANSI_COLOR_YELLOW "WARNING:  " ANSI_COLOR_RESET);
             printf("No external events file for Core %u !\n", core->core_id);
+            err_flag = true;
         }
     }
 
     t_s = clock();
     for (t = 1; t < core->g_pms->ticks; ++t) {
-        if (core->core_pms.is_ext_evts_on) {
+        if (core->core_pms.is_ext_evts_on && err_flag == false) {
             get_external_events_per_core(fext, &core, t);
         }
 
@@ -65,14 +66,12 @@ void *nsat_thread(void *args)
                 }
             }
             array_list_clean(&core->trans_events, 1);
-            pthread_mutex_unlock(&lock);
         }
+        pthread_mutex_unlock(&lock);
 
         pthread_barrier_wait(&barrier);
 
         nsat_events_and_learning((void *)&core[0]);
-
-        pthread_barrier_wait(&barrier);
     }
     t_f = clock();
     printf("Thread %u execution time: %lf seconds\n",

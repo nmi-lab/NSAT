@@ -153,10 +153,10 @@ cfg_train.set_ext_events(ext_evts_data_train)
 
 print("################## Writing Parameters Files ##################")
 c_nsat_writer_train = nsat.C_NSATWriter(cfg_train, path=exp_name, prefix='')
-c_nsat_writer_train.write()
+# c_nsat_writer_train.write()
 
 c_nsat_writer_test = nsat.C_NSATWriter(cfg_test, path=exp_name_test,prefix='')
-c_nsat_writer_test.write()
+# c_nsat_writer_test.write()
 
 fname_train = c_nsat_writer_train.fname
 fname_test = c_nsat_writer_test.fname
