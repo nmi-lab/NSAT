@@ -26,6 +26,12 @@ extern inline void copy_states(unit **dest,
                                int num_neurons,
                                int num_states); 
 
+extern inline void progress_bar(int x, int n);
+
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+pthread_spinlock_t slock; 
+pthread_barrier_t barrier;
+route_list_ *shared_ = NULL;
 
 /* ************************************************************************
  * ZERO_BIT_SHIFT: This function performs a power of two multiplication
@@ -507,9 +513,11 @@ void spike_events(STATETYPE *x,
                   array_list *trans_events,
                   int curr_time,
                   int num_neurons,
-                  int num_states)
+                  int num_states,
+                  int core_id)
 {
     int j;
+    int dst_core, dst_nrnn;
 
     for (j = 0; j < num_neurons; ++j) {
         /* Check for spike - fixed threshold value*/
@@ -520,6 +528,17 @@ void spike_events(STATETYPE *x,
                     nsat_neuron[j].spk_counter++;
                     if (nsat_neuron[j].is_transmitter) {
                         array_list_push(&trans_events, j, curr_time, 1);
+
+                        // pthread_spin_lock(&slock);
+                        pthread_mutex_lock(&lock);
+                        for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
+                            dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
+                            dst_nrnn = nsat_neuron[j].ptr_cores[q].dst_neuron_id;
+                            array_list_push(&shared_[dst_core].units,
+                                            dst_nrnn, 0, 0);
+                        }
+                        pthread_mutex_unlock(&lock);
+                        // pthread_spin_unlock(&slock);
                     }
 
                     if (nsat_neuron[j].is_spk_rec_on) {
@@ -534,6 +553,17 @@ void spike_events(STATETYPE *x,
                     nsat_neuron[j].spk_counter++;
                     if (nsat_neuron[j].is_transmitter) {
                         array_list_push(&trans_events, j, curr_time, 1);
+                        
+                        // pthread_spin_lock(&slock);
+                        pthread_mutex_lock(&lock);
+                        for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
+                            dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
+                            dst_nrnn = nsat_neuron[j].ptr_cores[q].dst_neuron_id;
+                            array_list_push(&shared_[dst_core].units,
+                                            dst_nrnn, 0, 0);
+                        }
+                        pthread_mutex_unlock(&lock);
+                        // pthread_spin_unlock(&slock);
                     }
 
                     if (nsat_neuron[j].is_spk_rec_on) {
@@ -788,7 +818,7 @@ void nsat_dynamics(nsat_core *core) {
     spike_events(core->vars->tX, core->nsat_neuron, core->nsat_events,
                  core->events, core->mon_events, core->trans_events,
                  core->curr_time, core->core_pms.num_neurons,
-                 core->core_pms.num_states);
+                 core->core_pms.num_states, core->core_id);
 
     /* Check for underflows */
     over_under_flow(core);
@@ -840,11 +870,6 @@ void nsat_events_and_learning(nsat_core *core) {
                           core->curr_time, core->core_pms.num_inputs,
                           core->core_pms.tstdpmax);
 
-        /* printf("Ext Extd Spikes:  %llu  ", core->curr_time); */
-        /* for (int l = 0; l < core->ext_caspk->length; ++l) */
-        /*     printf(" %llu ", core->ext_caspk->array[l]); */
-        /* printf("\n"); */
-
         /* Compute causal STDP on external events */
         if (core->ext_caspk->length > 0 && core->syn->tot_ext_syn_num != 0) {
             causal_stdp(core->ext_neuron,
@@ -864,11 +889,6 @@ void nsat_events_and_learning(nsat_core *core) {
         expand_spike_list(core->nsat_neuron, core->nsat_events, &core->nsat_caspk,
                           core->curr_time, core->core_pms.num_neurons,
                           core->core_pms.tstdpmax);
-
-        /* printf("NSAT Extd Spikes:  %llu  ", core->curr_time); */
-        /* for (int l = 0; l < core->nsat_caspk->length; ++l) */
-        /*     printf(" %llu ", core->nsat_caspk->array[l]); */
-        /* printf("\n"); */
 
         /* Compute causal STDP on NSAT events */
         if (core->nsat_caspk->length > 0 && core->syn->tot_nsat_syn_num != 0) {
@@ -953,4 +973,190 @@ void nsat_events_and_learning(nsat_core *core) {
     array_list_clean(&core->ext_events, 1);
     array_list_clean(&core->nsat_caspk, 1);
     array_list_clean(&core->ext_caspk, 1);
+    pthread_mutex_lock(&lock);
+    array_list_clean(&shared_[core->core_id].units, 0);
+    pthread_mutex_unlock(&lock);
+}
+
+void *nsat_thread(void *args)
+{
+    int t, q, i;
+
+    nsat_core *core = (nsat_core *)args;
+    clock_t t_s, t_f;
+    int id;
+    FILE *fext;
+
+    if (core->core_pms.is_ext_evts_on) {
+        fext = fopen(core->ext_evts_fname, "rb");
+        if (!fext) {
+            printf(ANSI_COLOR_YELLOW "WARNING:  " ANSI_COLOR_RESET);
+            printf("No external events file for Core %u !\n", core->core_id);
+        }
+    }
+
+    t_s = clock();
+    for (t = 1; t < core->g_pms->ticks; ++t) {
+        if (core->core_pms.is_ext_evts_on) {
+            get_external_events_per_core(fext, &core, t);
+        }
+
+        core->curr_time = t;
+        nsat_dynamics((void *)&core[0]);
+
+        pthread_barrier_wait(&barrier);
+
+        if (core->g_pms->is_routing_on) {
+            pthread_mutex_lock(&lock);
+            for (q = 0 ; q < shared_[core->core_id].units->length; ++q) {
+                array_list_push(&core->ext_events,
+                                shared_[core->core_id].units->array[q], t, 1);
+            }
+            pthread_mutex_unlock(&lock);
+        }
+
+        pthread_barrier_wait(&barrier);
+
+        nsat_events_and_learning((void *)&core[0]);
+    }
+    t_f = clock();
+    printf("Thread %u execution time: %lf seconds\n",
+           core->core_id, (double) (t_f - t_s) / CLOCKS_PER_SEC);
+
+    if (core->core_pms.is_ext_evts_on && fext!=NULL) {
+        fclose(fext);
+    }
+
+    return NULL;
+}
+
+
+int iterate_nsat(fnames *fname) {
+    int p;
+    clock_t t0, tf;
+    FILE *fp=NULL;
+
+    global_params g_pms;
+    nsat_core *cores = NULL;
+
+    pthread_t *cores_t=NULL;
+
+    /* Open parameters file */
+    fp = fopen(fname->params, "rb");
+    file_test(fp, fname->params);
+
+    /* Read global parameters */
+    read_global_params(fp, &g_pms);
+
+    shared_ = alloc(route_list_, g_pms.num_cores);
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        shared_[p].units = alloc(array_list, 1);
+        array_list_init(&shared_[p].units, 0);
+    }
+
+    /* Allocate memory for all the cores */
+    cores = alloc(nsat_core, g_pms.num_cores);
+    allocate_cores(&cores, fname, g_pms.num_cores);
+    for(p = 0; p < g_pms.num_cores; ++p) { cores[p].g_pms = &g_pms; }
+
+    /* Initialize RNG with seed */
+    if (g_pms.is_bm_rng_on) {
+        pcg32_srandom(g_pms.rng_init_state, g_pms.rng_init_seq);
+    }
+
+    /* Read/Load cores basic parameters */
+    read_core_params(fp, cores, g_pms.num_cores); 
+
+    /* Read/Load cores neurons NSAT parameters */
+    read_nsat_params(fp, cores, g_pms.num_cores);
+
+    /* Read/Load cores learning parameters */
+    read_lrn_params(fp, cores, g_pms.num_cores);
+
+    /* Read/Load monitors params */
+    read_monitor_params(fp, cores, g_pms.num_cores);
+    fclose(fp);
+
+    /* Initialize cores' temporary arrays */
+    initialize_cores_vars(cores, g_pms.num_cores);
+
+    /* Initialize units */
+    initialize_cores_neurons(&cores, g_pms.num_cores);
+
+    /* Neurons point to their NSAT parameters group */
+    nsat_pms_groups_map_file(fname->nsat_params_map, cores, g_pms.num_cores);
+
+    /* Neurons states point to their learning parameters group */
+    learning_pms_groups_map_file(fname->lrn_params_map, cores, g_pms.num_cores);
+
+    /* Print parameters in a file */
+    print_params2file(fname, cores, &g_pms);
+
+    /* Load all the synaptic weights to units */
+    initialize_incores_connections(fname, &cores, g_pms.num_cores);
+
+    /* Load all the inter-core connections */
+    initialize_cores_connections(fname->l1_conn, cores);
+
+    /* Open all necessary monitor files */
+    open_cores_monitor_files(cores, fname, g_pms.num_cores);
+    
+    /* Initialize all threads variables */
+    cores_t = alloc(pthread_t, g_pms.num_cores);
+    pthread_mutex_init(&lock, NULL);
+    // pthread_spin_init(&slock, PTHREAD_PROCESS_SHARED);
+    pthread_barrier_init(&barrier, NULL, g_pms.num_cores);
+
+    /* Check if clock is on */
+    t0 = clock();
+
+    /* Create and run threads (NSAT Cores) */
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        pthread_create(&cores_t[p], NULL, nsat_thread, (void *)&cores[p]);
+    }
+
+    /* Join threads */
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        pthread_join(cores_t[p], NULL);
+    }
+
+    /* If clock is turned on then print out the execution time */
+    tf = clock();
+    if (g_pms.is_clock_on) {
+        printf("Simulation execution time: %lf seconds\n",
+               (double) (tf - t0) / CLOCKS_PER_SEC);
+    }
+
+    pthread_mutex_destroy(&lock);
+    // pthread_spin_destroy(&slock);
+    pthread_barrier_destroy(&barrier);
+
+    /* Write spikes events */
+    write_spikes_events(fname, cores, g_pms.num_cores);
+
+    /* Write final synaptic strengths */
+    write_final_weights(fname, cores, g_pms.num_cores);
+
+    /* Write the shared memories per core */
+    write_shared_memories(fname, cores, g_pms.num_cores);
+
+    /* Close all the monitor files */
+    close_cores_monitor_files(cores, g_pms.num_cores);
+
+    /* Write spike statistics */
+    write_spike_statistics(fname, cores, g_pms.num_cores);
+
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        array_list_destroy(&shared_[p].units, 0);
+        dealloc(shared_[p].units);
+    }
+    dealloc(shared_);
+
+    /* Destroy neurons parameters groups and clean up memories */
+    dealloc_cores(&cores, g_pms.num_cores);
+    dealloc(cores);
+    if (!g_pms.is_single_core)
+        dealloc(cores_t);
+
+    return 0;
 }

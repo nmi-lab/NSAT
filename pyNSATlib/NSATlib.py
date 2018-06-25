@@ -580,6 +580,8 @@ class ConfigurationNSAT(object):
             return None
         if ext_evts_data is not None:
             self.ext_evts = True
+        if bool(self.L1_connectivity):
+            self.ext_evts = True
         if isinstance(self.ext_evts_data, multicoreEvents) is False:
             self.ext_evts_data = multicoreEvents(self.ext_evts_data)
 

@@ -80,7 +80,6 @@
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-
 /* Neuron parameters struct */
 struct nsat_parameters_s {
     int *prob;
@@ -283,6 +282,10 @@ struct nsat_core_s {
 typedef struct nsat_core_s nsat_core;
 
 
+typedef struct route_list_s {
+    array_list *units;
+} route_list_;
+
 
 /********************************************************************/
 /*  Functions declarations 
@@ -388,8 +391,7 @@ void expand_spike_list(unit *, array_list *, array_list **, int,
 void accumulate_synaptic_events(STATETYPE **, unit *, unit *, array_list *,
                                 int);
 void spike_events(STATETYPE *, unit *, array_list *, array_list *, array_list *,
-                  array_list *, int, int,
-                  int);
+                  array_list *, int, int, int, int);
 void causal_stdp(unit *, unit *, STATETYPE *, STATETYPE *, array_list *,
                  int, int, int, bool, bool);
 void acausal_stdp(unit *, unit *, STATETYPE *, array_list *, int,

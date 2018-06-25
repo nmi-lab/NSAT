@@ -214,7 +214,7 @@ void read_core_params(FILE *fp, nsat_core *core, int num_cores) {
                              core[p].core_pms.num_inputs) == -2) {
             printf(ANSI_COLOR_YELLOW "WARNING:  " ANSI_COLOR_RESET);
             printf("CORE #%d: Number of input units has been set to 0!\n", p);
-            core[p].core_pms.num_inputs = 0;
+            // core[p].core_pms.num_inputs = 0;
         }
 
         res = fread(&core[p].core_pms.num_neurons, sizeof(int), 1, fp);
