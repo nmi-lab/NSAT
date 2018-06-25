@@ -15,16 +15,11 @@ import pyNSATlib as nsat
 
 if __name__ == '__main__':
     # sim_ticks = 10000             # Simulation time
-    # N_CORES = 10                 # Number of cores
-    # N_NEURONS = [1]*10             # Number of neurons per core
-    # N_INPUTS = [0]*10              # Number of inputes per core
-    # N_STATES = [4]*10              # Number of states per core
-    # N_UNITS = N_INPUTS[0] + N_NEURONS[0]        # Total number of units
     sim_ticks = 1000             # Simulation time
-    N_CORES = 4                 # Number of cores
-    N_NEURONS = [1000, 330, 200, 150]            # Number of neurons per core
-    N_INPUTS = [200, 200, 200, 200]              # Number of inputes per core
-    N_STATES = [4, 4, 4, 4]              # Number of states per core
+    N_CORES = 5                 # Number of cores
+    N_NEURONS = [300, 300, 300, 300, 300]      # Number of neurons per core
+    N_INPUTS = [100, 100, 100, 100, 100]     # Number of inputes per core
+    N_STATES = [4, 4, 4, 4, 4]              # Number of states per core
     N_UNITS = N_INPUTS[0] + N_NEURONS[0]        # Total number of units
 
     # Constants
@@ -43,8 +38,8 @@ if __name__ == '__main__':
                                  monitor_states=True,
                                  ben_clock=True)
 
-    # Transition matrix
     for i in range(N_CORES):
+        # Transition matrix
         cfg.core_cfgs[i].A[0] = [[-1,  OFF, OFF, OFF],
                                  [OFF, OFF, OFF, OFF],
                                  [OFF, OFF, OFF, OFF],
@@ -67,16 +62,16 @@ if __name__ == '__main__':
                                                 'bool')
 
         # Mapping function between neurons and NSAT parameters groups
-        cfg.core_cfgs[i].nmap = np.zeros((N_NEURONS[i],), dtype='int')
+        cfg.core_cfgs[i].nmap = np.zeros((N_NEURONS[0],), dtype='int')
 
     cfg.set_L1_connectivity(({(0, 102): ((1, 1), (1, 50), (1, 73)),
-                              (0, 103): ((1, 15), (1, 95), (1, 7)),
-                              (1, 105): ((3, 89), (2, 65), (2, 56)),
-                              (2, 143): ((3, 21), (3, 45), (3, 33)),
-                              (2, 113): ((1, 5), (1, 50), (1, 7)),
-                              (2, 133): ((3, 41), (3, 5), (1, 77)),
-                              (3, 123): ((1, 19), (2, 75), (2, 57)),
-                              (3, 104): ((3, 3),)}))
+                              (1, 103): ((1, 15), (1, 95), (1, 7)),
+                              (2, 105): ((1, 89), (3, 65), (3, 56)),
+                              (3, 143): ((2, 21), (4, 45), (4, 33)),
+                              (4, 113): ((1, 5), (1, 50), (1, 7)),
+                              (2, 133): ((3, 41), (3, 5), (4, 77)),
+                              (4, 123): ((3, 19), (1, 75), (2, 57)),
+                              (0, 104): ((2, 3),)}))
 
     # Write C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',

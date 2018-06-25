@@ -977,9 +977,10 @@ void nsat_events_and_learning(nsat_core *core) {
     pthread_mutex_unlock(&lock);
 }
 
+
 void *nsat_thread(void *args)
 {
-    int t, q, i;
+    int t, q;
 
     nsat_core *core = (nsat_core *)args;
     clock_t t_s, t_f;
