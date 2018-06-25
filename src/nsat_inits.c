@@ -445,6 +445,8 @@ void initialize_cores_connections(char *fname, nsat_core *core)
         if (src_neuron_id > core[src_core_id].core_pms.num_neurons - 1) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
             printf("Invalid source neuron ID detected in intercore initialization process!\n");
+            printf("Offending source neuron ID: core %d neuron %d \n", src_core_id, src_neuron_id);
+            printf("Number of neurons in core %d is %d \n", src_core_id, core[src_core_id].core_pms.num_neurons - 1);
             exit(-1);
         }
         /* Read number of connections */

@@ -25,6 +25,9 @@ from pyNSATlib.NSATlib import check_weight_matrix, coreConfig
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 
 POPCOUNTER = 0
+CONN_TYPE_LOC =0
+CONN_TYPE_EXT =1
+CONN_TYPE_GLO =2
 
 
 def connections_dense_to_sparse_nonshared(W, CW):
@@ -50,8 +53,12 @@ def connections_dense_to_sparse_shared(ptr_table, wgt_table):
     return ptr_table, wgt_table
 
 
-class NSATSetup(object):
 
+
+
+
+
+class MulticoreSetup(object):
     def __init__(self, ncores=1):
         self.ncores = ncores
         self.nneurons = [0 for _ in range(ncores)]
@@ -67,8 +74,13 @@ class NSATSetup(object):
         self.populations = [[] for _ in range(ncores)]
         self.connections = [[] for _ in range(ncores)]
         self.connections_external = [[] for _ in range(ncores)]
-        self.L1Connections = {}
         self.connections_intercore = {}
+
+    def create_coreconfig(self, core):
+        NotImplementedError('Abstract method, implement')
+
+    def do_connections(self, core):
+        NotImplementedError('Abstract method, implement')
 
     def normalize_n_states(self, core):
         '''
@@ -120,6 +132,7 @@ class NSATSetup(object):
                 self.ptypes_order[core].append(s)
         return pop
 
+class NSATSetup(MulticoreSetup):
     def create_coreconfig(self, core):
         n_neurons = self.nneurons[core]
         n_inputs = self.ninputs[core]
@@ -166,14 +179,17 @@ class NSATSetup(object):
     def do_L1connections(self):
         L1Connections = {}
         for k, v in list(self.connections_intercore.items()):
+            src_core_id = k[0]
+            dst_core_id = k[1]
             vv = v.copy()
-            vv[0, :] += self.ninputs[k[0]]
+            #src_neuron_id
+            vv[0, :] += self.ninputs[src_core_id]
             # print(self.ninputs[k[0]])
             for i in range(len(v[0, :])):
-                key = (k[0], vv[0, i])
+                key = (src_core_id, vv[0, i])
                 if key not in L1Connections:
                     L1Connections[key] = ()
-                L1Connections[key] += ((k[1], v[1, i]),)
+                L1Connections[key] += ((dst_core_id, v[1, i]),)
         return L1Connections
 
     def do_connections(self, core):
@@ -227,6 +243,7 @@ class NSATSetup(object):
                 raise NotImplementedError()
 
         return ptr_table, wgt_table
+
 
 
 class Population(object):
@@ -354,6 +371,10 @@ class Connection(object):
         self.src_pop = src_pop
         self.dst_pop = dst_pop
         self.dst_state = dst_state
+        self.connection_type = -1 #CONN_TYPE_LOC := 0 is intracore
+                                  #CONN_TYPE_EXT := 1 is external
+                                  #CONN_TYPE_GLO := 2 is intercore
+                                  
 
     @property
     def src_bgn(self):
@@ -379,11 +400,11 @@ class Connection(object):
         self.wgt_table = wgt_table
         if self.src_pop.is_external and (self.src_pop.core != self.dst_pop.core):
             raise NotImplementedError(
-                'Currently, external populations ans destination populations must be on the same core.')
+                'Currently, external populations and destination populations must be on the same core.')
 
         elif not self.src_pop.is_external and (self.src_pop.core != self.dst_pop.core):
             # merge following two
-            self.is_external = True
+            self.connection_type = CONN_TYPE_GLO
             # TODO: make only L1 connections that exist
             popin = self.setup.create_external_population(len(self.src_pop),
                                                           self.dst_pop.core,
@@ -398,8 +419,10 @@ class Connection(object):
             self.src_pop = popin
             self.setup.connections_external[self.dst_pop.core].append(self)
         elif self.src_pop.is_external:
+            self.connection_type = CONN_TYPE_EXT
             self.setup.connections_external[self.dst_pop.core].append(self)
         else:
+            self.connection_type = CONN_TYPE_LOC
             self.setup.connections[self.dst_pop.core].append(self)
         return ptr_table, wgt_table
 
