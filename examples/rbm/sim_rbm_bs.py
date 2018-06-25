@@ -167,7 +167,7 @@ cfg_train = nsat.ConfigurationNSAT(sim_ticks=sim_ticks_train,
                                    N_NEURONS=N_NEURONS,
                                    N_STATES=N_STATES,
                                    rec_deltat=50,
-                                   w_check=True,
+                                   w_check=False,
                                    w_boundary=7,
                                    tstdpmax=[39],
                                    monitor_states=False,
@@ -182,7 +182,7 @@ cfg_test = nsat.ConfigurationNSAT(sim_ticks=sim_ticks_test,
                                   N_INPUTS=N_INPUTS,
                                   N_NEURONS=N_NEURONS,
                                   N_STATES=N_STATES,
-                                  w_check=True,
+                                  w_check=False,
                                   w_boundary=7,
                                   monitor_states=False,
                                   monitor_spikes=True,
@@ -306,20 +306,20 @@ c_nsat_reader_test = nsat.C_NSATReader(cfg_test, fname_test)
 # cfg_train.core_cfgs[0].latex_print_parameters(2)
 
 if __name__ == '__main__':
-    n_epoch = 30
+    n_epoch = 50
     e = []
     print("############## Training ##############")
     for i in range(n_epoch):
         # Call the C NSAT for learning
         print("Epoch #:  ", i)
-        c_nsat_writer_train.fname.stats_nsat = '/tmp/test_eCD_stats_nsat'+str(i)
+        c_nsat_writer_train.fname.stats_nsat = \
+                '/tmp/test_eCD_stats_nsat_full'+str(i)
         nsat.run_c_nsat(c_nsat_writer_train.fname)
         if n_epoch > 1:
             shutil.copyfile(fname_train.shared_mem+'_core_0.dat',
                             fname_train.syn_wgt_table+'_core_0.dat',)
             shutil.copyfile(fname_train.shared_mem+'_core_0.dat',
                             fname_test.syn_wgt_table+'_core_0.dat',)
-        # res = c_nsat_reader_train.read_c_nsat_raw_events()[0]
         nsat.run_c_nsat(c_nsat_writer_test.fname)
         test_spk = nsat.importAER(c_nsat_reader_test.read_c_nsat_raw_events()[0],
                                   sim_ticks=sim_ticks_test)

@@ -54,8 +54,8 @@ void *nsat_thread(void *args)
 
         pthread_barrier_wait(&barrier);
 
+        pthread_mutex_lock(&lock);
         if (core->g_pms->is_routing_on) {
-            pthread_mutex_lock(&lock);
             for(i = 0; i < core->trans_events->length; ++i) {
                 id = core->trans_events->array[i];
                 for (q = 0; q < core->nsat_neuron[id].router_size; ++q) {
@@ -68,9 +68,9 @@ void *nsat_thread(void *args)
         }
         pthread_mutex_unlock(&lock);
 
-        pthread_barrier_wait(&barrier);
-
         nsat_events_and_learning((void *)&core[0]);
+
+        pthread_barrier_wait(&barrier);
     }
     t_f = clock();
     printf("Thread %u execution time: %lf seconds\n",
