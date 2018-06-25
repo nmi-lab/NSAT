@@ -67,7 +67,7 @@ setup       = NSATSetup(ncores = N_CORES)
 pop_data    = setup.create_external_population(Nv, 0, name = 'Data')
 pop_lab     = setup.create_external_population(Nl, 0, name = 'Label')
 pop_hid1     = setup.create_population(n = Nh, core = 0, neuron_cfg = erf_ntype, name = 'Hid1')
-pop_hid2     = setup.create_population(n = Nh, core = 0, neuron_cfg = erf_ntype, name = 'Hid2')
+pop_hid2     = setup.create_population(n = Nh, core = 1, neuron_cfg = erf_ntype, name = 'Hid2')
 pop_out     = setup.create_population(n = Nl, core = 1, neuron_cfg = output_ntype, name = 'Out')
 pop_err_pos = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype, name = 'ERR+')
 pop_err_neg = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype, name = 'ERR-')
@@ -200,11 +200,5 @@ if __name__ == '__main__':
                 print(exp_name)
                 print(pip)
 
-    try:
-        import experimentTools as et
-        d=et.mksavedir(pre='Results_Scripts/')
-        et.save(pip, 'pip.pkl')
-        et.annotate('res',text=str(pip))
-    except ImportError:
-        print('saving disabled due to missing experiment tools')
+
      

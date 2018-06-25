@@ -130,12 +130,12 @@ def create_spike_train(data_train, t_sample, scaling=1, n_mult=1, with_labels = 
 
 
 data_train, targets_train = load_mnist(
-        '/shares/data/mnist/train-images-idx3-ubyte',
-        '/shares/data/mnist/train-labels-idx1-ubyte',
+        '/share/data/mnist/train-images-idx3-ubyte',
+        '/share/data/mnist/train-labels-idx1-ubyte',
         50000, with_labels = True)
 data_classify, targets_classify = load_mnist(
-        '/shares/data/mnist/t10k-images-idx3-ubyte',
-        '/shares/data/mnist/t10k-labels-idx1-ubyte',
+        '/share/data/mnist/t10k-images-idx3-ubyte',
+        '/share/data/mnist/t10k-labels-idx1-ubyte',
         10000, with_labels = False)
 
 

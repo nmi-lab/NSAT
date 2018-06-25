@@ -23,7 +23,10 @@ def find_nsat_library():
     Find libnsat.so library in the system using LD_LIBRARY_PATH
     *outputs*: path to libnsat.so
     '''
-    ldlp = os.environ.get('LD_LIBRARY_PATH').split(':')
+    ldlp = os.environ.get('LD_LIBRARY_PATH')
+    if ldlp is None:
+        raise RuntimeError('LD_LIBRARY_PATH not set')
+    ldlp = ldlp.split(':')
     for p in ldlp:
         if os.path.isfile(p + '/libnsat.so'):
             return p + '/libnsat.so'
@@ -33,15 +36,15 @@ def find_nsat_library():
 
 def run_c_nsat(fname):
     from ctypes import POINTER, cdll, c_int
-    from .nsat_writer import c_nsat_fnames
-
+    from .nsat_writer import c_nsat_fnames, generate_c_fnames
+    
     _nsat = cdll.LoadLibrary(find_nsat_library())
 
     # handle = _nsat._handle
     _nsat.iterate_nsat.argtypes = (POINTER(c_nsat_fnames),)
     _nsat.iterate_nsat.restype = c_int
 
-    flag = _nsat.iterate_nsat(fname)
+    flag = _nsat.iterate_nsat(generate_c_fnames(fname))
     return flag
 
 
@@ -223,6 +226,16 @@ class coreConfig(object):
             setattr(self, i, None)
         self.gen_core_cfg(n_states, n_neurons, n_inputs)
         self.default_core_cfg = copy.deepcopy(self)
+
+    def __repr__(self):
+        return '''NSAT Core Configuration:
+                   Nunits: {n_units}
+                   Nstates: {n_states}
+                   Ninputs: {n_inputs}
+                   Nneurons: {n_neurons}
+                   Ngroups: {n_groups}
+                   L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz,**self.__dict__)
+                  
 
     def gen_core_cfg(core_cfg, n_states, n_neurons, n_inputs):
 
@@ -579,6 +592,8 @@ class ConfigurationNSAT(object):
             self.ext_evts = True
             return None
         if ext_evts_data is not None:
+            self.ext_evts = True
+        if bool(self.L1_connectivity):
             self.ext_evts = True
         if isinstance(self.ext_evts_data, multicoreEvents) is False:
             self.ext_evts_data = multicoreEvents(self.ext_evts_data)

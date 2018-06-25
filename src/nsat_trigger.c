@@ -49,6 +49,7 @@ void *nsat_thread(void *args)
             get_external_events_per_core(fext, &core, t);
         }
 
+        if ((t%1000)==0 && core->core_id == 0) printf("Time %d\n",t);
         core->curr_time = t;
         nsat_dynamics((void *)&core[0]);
 

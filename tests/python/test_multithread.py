@@ -74,7 +74,8 @@ if __name__ == '__main__':
                               (0, 104): ((2, 3),)}))
 
     # Write C NSAT parameters binary files
-    c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_reset')
+    c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',
+            prefix='test_multithread')
     c_nsat_writer.write()
 
     # Call the C NSAT
