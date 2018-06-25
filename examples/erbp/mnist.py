@@ -13,7 +13,7 @@ import numpy as np
 
 def select_equal_n_labels(n, data, labels, classes = None, seed=None):
     if classes is None:
-        classes = range(10)    
+        classes = list(range(10))    
     n_classes = len(classes)
     n_s = np.ceil(float(n)/n_classes)
     max_i = [np.nonzero(labels==i)[0] for i in classes]
@@ -35,12 +35,10 @@ def load_mnist(data_url, labels_url, n_samples=None, nc_perlabel=1, with_labels=
     Outputs input vector, label vector and sequence of labels.
     kwargs unsed
     '''
-    import gzip, cPickle
-
-    print 'Loading ' + data_url
-    f_image = file(data_url  ,'r')
-    print 'Loading ' + labels_url
-    f_label = file(labels_url,'r')
+    print(('Loading ' + data_url))
+    f_image = open(data_url  ,'rb')
+    print(('Loading ' + labels_url))
+    f_label = open(labels_url,'rb')
 
     #Extracting images
     m, Nimages, dimx, dimy =  np.fromstring(f_image.read(16),dtype='>i')
@@ -59,7 +57,7 @@ def load_mnist(data_url, labels_url, n_samples=None, nc_perlabel=1, with_labels=
     if randomize is False:
         iv_seq, iv_l_seq  = iv_clamped[:n_samples], iv_l[:n_samples]
     elif randomize == 'within':
-        idx = range(n_samples)
+        idx = list(range(n_samples))
         iv_seq, iv_l_seq  = iv_clamped[:n_samples], iv_l[:n_samples]
         np.random.shuffle(idx)
         iv_seq = iv_clamped[idx]

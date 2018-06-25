@@ -24,7 +24,7 @@ extern inline void over_under_flow(nsat_core *core);
 extern inline void copy_states(unit **dest,
                                STATETYPE *src,
                                int num_neurons,
-                               int num_states); 
+                               int num_states);
 
 extern inline void progress_bar(int x, int n);
 
@@ -945,7 +945,6 @@ void nsat_events_and_learning(nsat_core *core) {
                  core->ext_events, core->curr_time);
 
     /* Update global modulator's state */
-                         
     set_global_modulator(&core->vars->g, core->vars->tX, core->nsat_neuron,
                          core->nsat_events, core->core_pms.num_states);
 

@@ -20,7 +20,7 @@ import time
 import sys
 import copy
 import os
-DATA_DIR = './data'
+DATA_DIR = '/share/data/'
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 sys.path.append(DATA_DIR)
@@ -43,17 +43,17 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None, with_labels=True):
     n = np.shape(stim)[1]
     nc = 10
     stim[stim <= 0] = 1e-5
-    SL = pyST.SpikeList(id_list=range(n))
-    SLd = pyST.SpikeList(id_list=range(n - nc))
-    SLc = pyST.SpikeList(id_list=range(n - nc, n))
+    SL = pyST.SpikeList(id_list=list(range(n)))
+    SLd = pyST.SpikeList(id_list=list(range(n - nc)))
+    SLc = pyST.SpikeList(id_list=list(range(n - nc, n)))
     for i in range(n - nc):
         SLd[i] = pyST.STCreate.inh_poisson_generator(stim[:, i],
-                                                     range(0, len(stim)
-                                                           * time, time),
+                                                     list(range(0, len(stim)
+                                                           * time, time)),
                                                      t_stop=t_sim, refractory=4.)
     if with_labels:
         for t in range(0, len(stim)):
-            SLt = pyST.SpikeList(id_list=range(n - nc, n))
+            SLt = pyST.SpikeList(id_list=list(range(n - nc, n)))
             for i in range(n - nc, n):
                 if stim[t, i] > 1e-2:
                     SLt[i] = pyST.STCreate.regular_generator(stim[t, i],
@@ -127,12 +127,12 @@ exp_name_test = 'test_eta' + str(eta) + '_sig' + str(sig) + '_inputfact' + str(
     inp_fact) + '_inith' + str(inith) + '_wgg' + str(wgg)
 
 data_train, targets_train = mnist.load_mnist(
-    'data/mnist/train-images-idx3-ubyte',
-    'data/mnist/train-labels-idx1-ubyte',
+    '/share/data/mnist/train-images-idx3-ubyte',
+    '/share/data/mnist/train-labels-idx1-ubyte',
     50000, with_labels=True)
 data_classify, targets_classify = mnist.load_mnist(
-    'data/mnist/t10k-images-idx3-ubyte',
-    'data/mnist/t10k-labels-idx1-ubyte',
+    '/share/data/mnist/t10k-images-idx3-ubyte',
+    '/share/data/mnist/t10k-labels-idx1-ubyte',
     10000, with_labels=False)
 
 np.random.seed(100)
@@ -141,7 +141,7 @@ np.random.seed(100)
 print("###################### Train Stimulus Creation ##################################")
 sim_ticks = N_train * t_sample_train
 sim_ticks_test = N_test * t_sample_test
-idx = range(len(data_train))
+idx = list(range(len(data_train)))
 np.random.shuffle(idx)
 idx = idx[:N_train]
 data_train = np.concatenate([data_train[idx, :] for _ in range(n_mult)])
@@ -366,12 +366,10 @@ cfg_test.set_ext_events(ext_evts_data_test)
 print("################## Writing Parameters Files ##################")
 c_nsat_writer_train = nsat.C_NSATWriter(
     cfg_train, path='/tmp/erbp_mnist_train1/', prefix='')
-c_nsat_writer_train.fname.ext_events = 'mnist_train_ext_events.dat'
 c_nsat_writer_train.write()
 
 c_nsat_writer_test = nsat.C_NSATWriter(
     cfg_test, path='/tmp/erbp_mnist_test1/', prefix='')
-c_nsat_writer_test.fname.ext_events = 'mnist_test_ext_events.dat'
 c_nsat_writer_test.write()
 
 fname_train = c_nsat_writer_train.fname
@@ -399,14 +397,16 @@ for i in range(nepochs):
     if test_every > 0:
         if i % test_every == test_every - 1:
             nsat.run_c_nsat(fname_test)
-            test_spikelist = nsat.importAER(nsat.read_from_file(
-                fname_test.events + '_core_0.dat'), sim_ticks=sim_ticks_test, id_list=np.arange(sP, sP + Np))
+            test_spikelist = c_nsat_reader_test.read_spikelist(
+                    sim_ticks=sim_ticks_test,
+                    id_list=np.arange(sP, sP + Np),
+                    core = 0)
 
-            pip .append([i, float(sum(np.argmax(test_spikelist.id_slice(range(
-                sP, sP + Np)).firing_rate(t_sample_test).T, axis=1) == targets_classify[:N_test])) / N_test * 100])
+            pip .append([i, float(sum(np.argmax(test_spikelist.id_slice(list(range(
+                sP, sP + Np))).firing_rate(t_sample_test).T, axis=1) == targets_classify[:N_test])) / N_test * 100])
 
-            print exp_name
-            print pip
+            print(exp_name)
+            print(pip)
     copyfile(fname_train.shared_mem + '_core_0.dat',
              fname_train.syn_wgt_table + '_core_0.dat',)
 

@@ -17,6 +17,22 @@ from .global_vars import *
 from ctypes import Structure, c_char_p
 from pyNCSre import pyST
 
+FNAME_FIELDS = ['nsat_params_map',
+                'lrn_params_map',
+                'params',
+                'syn_wgt_table',
+                'syn_ptr_table',
+                'ext_events',
+                'synw',
+                'synw_final',
+                'events',
+                'states',
+                'check_pms',
+                'stdp_fun',
+                'stats_nsat',
+                'stats_ext',
+                'l1_conn',
+                'shared_mem']
 
 def pack(data, typ='i'):
     import struct
@@ -36,7 +52,7 @@ class NSATWriter(object):
         if not os.path.exists(path):
             warnings.warn('Path {0} does not exist, creating'.format(path))
             os.makedirs(path)
-        self.fname = self.generate_c_fnames(path + '/' + prefix)
+        self.fname = self.generate_fnames(path + '/' + prefix)
 
     def write(self, write_events=True,
               write_weights=True,
@@ -72,46 +88,50 @@ class c_nsat_fnames(Structure):
     """ fnames class implements the C struct: fnames. Contains the
         filenames of all the necessary input files.
     """
-    _fields_ = [('nsat_params_map', c_char_p),
-                ('lrn_params_map', c_char_p),
-                ('params', c_char_p),
-                ('syn_wgt_table', c_char_p),
-                ('syn_ptr_table', c_char_p),
-                ('ext_events', c_char_p),
-                ('synw', c_char_p),
-                ('synw_final', c_char_p),
-                ('events', c_char_p),
-                ('states', c_char_p),
-                ('check_pms', c_char_p),
-                ('stdp_fun', c_char_p),
-                ('stats_nsat', c_char_p),
-                ('stats_ext', c_char_p),
-                ('l1_conn', c_char_p),
-                ('shared_mem', c_char_p)]
+    _fields_ = [(s, c_char_p) for s in FNAME_FIELDS ]
+
+class nsat_fnames(object):
+    """ fnames class implements the C struct: fnames. Contains the
+        filenames of all the necessary input files.
+    """
+    fields   = FNAME_FIELDS
+    def __init__(self):
+        for f in self.fields:
+            setattr(self, f, '')
+
+def generate_c_fnames(fname=None):
+    c_fnames = c_nsat_fnames()
+    if fname is not None:
+        for f in fname.fields:
+            setattr(c_fnames, f, getattr(fname, f).encode('utf-8'))
+    return c_fnames
+
+def generate_default_fnames(path):
+    fname = nsat_fnames()
+    fname.nsat_params_map = path + "_nsat_params_map.dat"
+    fname.lrn_params_map = path + "_lrn_params_map.dat"
+    fname.params = path + "_params.dat"
+    fname.syn_wgt_table = path + "_wgt_table"
+    fname.syn_ptr_table = path + "_ptr_table"
+    fname.ext_events = path + "_ext_events"
+    fname.synw = path + "_weights"
+    fname.synw_final = path + "_weights_final"
+    fname.events = path + "_events"
+    fname.states = path + "_states"
+    fname.check_pms = path + "_cpms.dat"
+    fname.stdp_fun = path + "_stdp_fun.dat"
+    fname.stats_nsat = path + "_stats_nsat"
+    fname.stats_ext = path + "_stats_ext"
+    fname.l1_conn = path + "_l1_conn.dat"
+    fname.shared_mem = path + "_shared_mem"
+    return fname
 
 
 class C_NSATWriter(NSATWriter):
     # Struct contains all the file names
 
-    def generate_c_fnames(self, path):
-        fname = c_nsat_fnames()
-        fname.nsat_params_map = (path + "_nsat_params_map.dat").encode('utf-8')
-        fname.lrn_params_map = (path + "_lrn_params_map.dat").encode('utf-8')
-        fname.params = (path + "_params.dat").encode('utf-8')
-        fname.syn_wgt_table = (path + "_wgt_table").encode('utf-8')
-        fname.syn_ptr_table = (path + "_ptr_table").encode('utf-8')
-        fname.ext_events = (path + "_ext_events").encode('utf-8')
-        fname.synw = (path + "_weights").encode('utf-8')
-        fname.synw_final = (path + "_weights_final").encode('utf-8')
-        fname.events = (path + "_events").encode('utf-8')
-        fname.states = (path + "_states").encode('utf-8')
-        fname.check_pms = (path + "_cpms.dat").encode('utf-8')
-        fname.stdp_fun = (path + "_stdp_fun.dat").encode('utf-8')
-        fname.stats_nsat = (path + "_stats_nsat").encode('utf-8')
-        fname.stats_ext = (path + "_stats_ext").encode('utf-8')
-        fname.l1_conn = (path + "_l1_conn.dat").encode('utf-8')
-        fname.shared_mem = (path + "_shared_mem").encode('utf-8')
-        return fname
+    def generate_fnames(self, path):
+        return generate_default_fnames(path)
 
     def write_globals(self):
         # Globals are written in write_corecfgs
@@ -257,8 +277,7 @@ class C_NSATWriter(NSATWriter):
             tm_count = Counter(tm)
             tms = list(range(1, cfg.sim_ticks))
             pos_t = 0
-            filename = self.fname.ext_events + \
-                ('_core_' + str(core) + '.dat').encode('utf-8')
+            filename = self.fname.ext_events + ('_core_' + str(core) + '.dat')
             with open(filename, 'wb') as fe:
                 for t in tms:
                     tc = tm_count[t]
@@ -276,8 +295,7 @@ class C_NSATWriter(NSATWriter):
     def write_L0_ptr_table(self):
         for p, core_cfg in self.cfg:
             from scipy.sparse import issparse
-            filename = self.fname.syn_ptr_table + \
-                ('_core_' + str(p) + '.dat').encode('utf-8')
+            filename = self.fname.syn_ptr_table + ('_core_' + str(p) + '.dat')
             with open(filename, 'wb') as fw:
                 if issparse(core_cfg.ptr_table):
                     cw = core_cfg.ptr_table.tocoo()
@@ -300,21 +318,22 @@ class C_NSATWriter(NSATWriter):
 
     def write_L0_wgt_table(self):
         for p, core_cfg in self.cfg:
-            filename = self.fname.syn_wgt_table + \
-                ('_core_' + str(p) + '.dat').encode('utf-8')
+            filename = self.fname.syn_wgt_table + ('_core_' + str(p) + '.dat')
             with open(filename, 'wb') as fw:
                 fw.write(pack(core_cfg.wgt_table, 'i'))
 
     def write_L1connectivity(self):
         L1 = self.cfg.L1_connectivity
+        #count all outward connections (slow)
+        n = len(L1)
         with open(self.fname.l1_conn, 'wb') as fw:
-            fw.write(pack(len(L1), 'i'))
+            fw.write(pack(n, 'i'))
             for src, dsts in L1.items():
-                nonzero_elems = 0
-                if(isinstance(dsts[0], tuple)):
-                    nonzero_elems = len((dsts))
-                else:
-                    nonzero_elems = len(np.shape(dsts))
+                #nonzero_elems = 0
+                ##if(isinstance(dsts[0], tuple)):
+                ##    nonzero_elems = len((dsts))
+                ##else:
+                #    nonzero_elems = len(np.shape(dsts))
                 nonzero_elems = len((dsts))
                 fw.write(pack(src[0], 'i'))
                 fw.write(pack(src[1], 'i'))

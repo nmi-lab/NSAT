@@ -111,8 +111,8 @@ def load_compatibility(filename):
         self.append(klass)
         
     def loads(filename_):
-        fh = file(filename_,'rb')
-        unpickler = pickle.Unpickler(fh)
+        with open(filename_,'rb') as fh:
+            unpickler = pickle.Unpickler(fh)
         unpickler.dispatch[pickle.GLOBAL] = mapped_load_global
         return unpickler.load()
     
@@ -129,7 +129,7 @@ def load(filename=None, compatibility=False):
     if compatibility:
         return load_compatibility(filename)
     else:
-        return pickle.load(file(filename, 'rb'))    
+        return pickle.load(open(filename, 'rb'))    
 
 
 def save_source():
@@ -157,18 +157,15 @@ def save_file(filename):
 
 def save(obj=None, filename=None):
     if obj == None and filename == None:
-        f = file(globaldata.directory + 'globaldata.pickle', 'w')
-        pickle.dump(globaldata, f)
-        f.close()
+        with open(globaldata.directory + 'globaldata.pickle', 'w') as f:
+            pickle.dump(globaldata, f)
         save_source()
     elif obj == None and filename != None:
-        f = file(globaldata.directory + filename, 'w')
-        pickle.dump(globaldata, f)
-        f.close()
+        with open(globaldata.directory + filename, 'w') as f:
+            pickle.dump(globaldata, f)
     else:
-        f = file(globaldata.directory + filename, 'w')
-        pickle.dump(obj, f)
-        f.close()
+        with open(globaldata.directory + filename, 'w') as f:
+            pickle.dump(obj, f)
     return None
 
 
@@ -212,10 +209,6 @@ def mksavedir(pre='Results/', exp_dir=None):
 
     globaldata.directory = direct + str('/')
 
-    fh = file(
-        globaldata.directory + time.strftime("%H:%M:%S", time.localtime()), 'w')
-    fh.close()
-
     print(("Created experiment directory {0}".format(globaldata.directory)))
     return globaldata.directory
 
@@ -230,27 +223,9 @@ def savefig(filename, *args, **kwargs):
 
 def annotate(filename='', text=''):
     "Create a file in the Results directory, with contents text"
-    f = file(globaldata.directory + filename, 'w')
-    f.write(text)
-    f.close()
+    with open(globaldata.directory + filename, 'w') as f:
+        f.write(text)
 
-def save_rec_files(nsetup):
-    '''
-    Saves files recorded by the communicator and prepends address specification
-    '''
-    fh_addr_spec_mon = file(globaldata.directory + REC_FN_SEQ, 'w')
-    fh_addr_spec_seq = file(globaldata.directory + REC_FN_MON, 'w')
-    seq_addr_spec_str = nsetup.seq.reprAddressSpecification()
-    mon_addr_spec_str = nsetup.mon.reprAddressSpecification()
-    fh_addr_spec_mon.write(mon_addr_spec_str)
-    fh_addr_spec_seq.write(seq_addr_spec_str)
-    fh_addr_spec_mon.close()
-    fh_addr_spec_seq.close()
-    exp_fns = nsetup.communicator.get_exp_rec()
-    import shutil, os
-    for f in exp_fns:
-        shutil.copyfile(f, globaldata.directory+f.split('/')[-1])
-        
 def savefigs(filename='fig', extension = 'png', close=True, *args, **kwargs):
     """
     Saves all figures with filename *filename#* where # is the figure number.
