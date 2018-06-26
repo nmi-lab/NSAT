@@ -434,7 +434,8 @@ void initialize_cores_connections(char *fname, nsat_core *core)
         fread(&src_core_id, sizeof(int), 1, fp);
         if (src_core_id > core[0].g_pms->num_cores - 1) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-            printf("Invalid source core ID detected in intercore initialization process!\n");
+            printf("Invalid source core ID %d detected in intercore initialization process!\n",
+                    src_core_id);
             exit(-1);
         }
         /* Read source neuron ID */
@@ -442,7 +443,8 @@ void initialize_cores_connections(char *fname, nsat_core *core)
         src_neuron_id = abs(src_neuron_id - core[src_core_id].core_pms.num_inputs);
         if (src_neuron_id > core[src_core_id].core_pms.num_neurons - 1) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-            printf("Invalid source neuron ID detected in intercore initialization process!\n");
+            printf("Invalid source neuron ID %d detected in intercore initialization process!\n",
+                   src_neuron_id);
             exit(-1);
         }
         /* Read number of connections */
@@ -457,13 +459,15 @@ void initialize_cores_connections(char *fname, nsat_core *core)
             fread(&dst_core_id, sizeof(int), 1, fp);
             if (dst_core_id > core[0].g_pms->num_cores - 1) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-                printf("Invalid destination core ID %d detected in intercore initialization process!\n", dst_core_id);
+                printf("Invalid destination core ID %d detected in intercore initialization process!\n",
+                        dst_core_id);
                 exit(-1);
             }
             fread(&dst_neuron_id, sizeof(int), 1, fp);
             if (dst_neuron_id > core[dst_core_id].core_pms.num_inputs - 1) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-                printf("Invalid destination neuron ID %d detected in intercore initialization process!\n", dst_neuron_id);
+                printf("Invalid destination neuron ID %d detected in intercore initialization process!\n",
+                        dst_neuron_id);
                 exit(-1);
             }
             core[src_core_id].nsat_neuron[src_neuron_id].ptr_cores[i].dst_core_id = dst_core_id;
