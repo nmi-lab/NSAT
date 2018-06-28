@@ -45,7 +45,7 @@ if __name__ == '__main__':
     sim_ticks = 1000                # Simulation time
     N_CORES = 1                     # Number of cores
     N_NEURONS = [100]                 # Number of neurons per core
-    N_INPUTS = [100]                  # Number of inputs per core
+    N_INPUTS = [101]                  # Number of inputs per core
     N_STATES = [4]                  # Number of states pare core
     N_UNITS = N_INPUTS[0] + N_NEURONS[0]        # Total units
 
@@ -150,8 +150,8 @@ if __name__ == '__main__':
     SL = SimSpikingStimulus(stim, t_sim=sim_ticks)
     SLr = pyST.SpikeList(id_list=[100])
     SLr[100] = pyST.STCreate.inh_poisson_generator(rate=np.array([0., 100., 0.]),
-                                                 t=np.array([0, 400, 600]),
-                                                 t_stop=sim_ticks)
+                                                   t=np.array([0, 400, 600]),
+                                                   t_stop=sim_ticks)
     SL = pyST.merge_spikelists(SL, SLr)
     ext_evts_data = nsat.exportAER(SL)
     cfg.set_ext_events(ext_evts_data)
@@ -172,7 +172,7 @@ if __name__ == '__main__':
     wt = c_nsat_reader.read_synaptic_weights_history()[0]
     print(wt.shape)
     in_spikelist = SL
-    out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 

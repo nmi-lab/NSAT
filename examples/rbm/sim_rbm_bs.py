@@ -91,7 +91,7 @@ idx = range(32) * n_mult
 np.random.shuffle(idx)
 data_train = data_train[idx, :]
 
-m = data_train.shape[1] * 2
+m = data_train.shape[0] * 2
 stim_train = np.zeros([m, Nv+Ns])
 stim_train_i = np.zeros([m, Nv])
 silent = np.zeros((1, Nv))
@@ -321,9 +321,14 @@ if __name__ == '__main__':
             shutil.copyfile(fname_train.shared_mem+'_core_0.dat',
                             fname_test.syn_wgt_table+'_core_0.dat',)
         nsat.run_c_nsat(c_nsat_writer_test.fname)
-        test_spk = c_nsat_reader_test.read_spikelist(
-                sim_ticks=sim_ticks_test,
-                core=0)
+        test_spk = nsat.importAER(nsat.read_from_file(
+                c_nsat_writer_test.fname.events+'_core_0.dat'),
+                                  sim_ticks=sim_ticks_test)
+        test_spk = nsat.importAER(c_nsat_reader_test.read_events(0),
+                                  sim_ticks=sim_ticks_test)
+        # train_spk = nsat.importAER(nsat.read_from_file(
+        #         c_nsat_writer_train.fname.events+'_core_0.dat'),
+        #                           sim_ticks=sim_ticks_train)
         sl = test_spk.id_slice([16, 17])
         mm = np.argmax(sl.firing_rate(time_bin=test_duration), axis=0)[::2]
         print(100*sum(labels[::2] != mm)/32.0)
@@ -340,4 +345,3 @@ if __name__ == '__main__':
     W = W_new[(Ns+Ne+Ni):(Ns+Ne+Ni+Nv), (Ns+Ne+Ni+Nv):, 1]
     WT = W_new[(Ns+Ne+Ni+Nv):, (Ns+Ne+Ni):(Ns+Ne+Ni+Nv), 1]
     np.save('/tmp/weights_full', W)
-

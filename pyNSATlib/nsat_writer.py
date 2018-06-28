@@ -300,9 +300,9 @@ class C_NSATWriter(NSATWriter):
                 if issparse(core_cfg.ptr_table):
                     cw = core_cfg.ptr_table.tocoo()
                     nonzero_elems = cw.nnz
-                    src_nrn = cw.row.astype('uint64').astype('uint64')
-                    dst_nrn = (cw.col % core_cfg.n_units).astype('uint64')
-                    dst_state = (cw.col // core_cfg.n_units).astype('uint64')
+                    src_nrn = cw.row.astype('i').astype('i')
+                    dst_nrn = (cw.col % core_cfg.n_units).astype('i')
+                    dst_state = (cw.col // core_cfg.n_units).astype('i')
                     ptr_data = np.column_stack(
                         [src_nrn, dst_nrn, dst_state, cw.data])
                     fw.write(pack(nonzero_elems, 'i'))
@@ -324,16 +324,10 @@ class C_NSATWriter(NSATWriter):
 
     def write_L1connectivity(self):
         L1 = self.cfg.L1_connectivity
-        #count all outward connections (slow)
         n = len(L1)
         with open(self.fname.l1_conn, 'wb') as fw:
             fw.write(pack(n, 'i'))
             for src, dsts in L1.items():
-                #nonzero_elems = 0
-                ##if(isinstance(dsts[0], tuple)):
-                ##    nonzero_elems = len((dsts))
-                ##else:
-                #    nonzero_elems = len(np.shape(dsts))
                 nonzero_elems = len((dsts))
                 fw.write(pack(src[0], 'i'))
                 fw.write(pack(src[1], 'i'))
