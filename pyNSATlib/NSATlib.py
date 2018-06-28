@@ -427,7 +427,7 @@ def process_Xresets(core_cfg):
 
 class ConfigurationNSAT(object):
     PKL_MEMBERS = ['monitor_weights_final',
-                   'seed',
+                   'single_core',
                    'core_cfgs',
                    'tstdpmax',
                    'groups_set',
@@ -449,6 +449,8 @@ class ConfigurationNSAT(object):
                    'gated_learning',
                    'check_flag',
                    'is_bm_rng_on',
+                   'routing_en',
+                   'seed',
                    'monitor_weights',
                    'plasticity_en']
 
@@ -491,20 +493,18 @@ class ConfigurationNSAT(object):
             self.single_core = False
         self.routing_en = False
 
-        plasticity_en = np.array(plasticity_en, 'bool')
-        if plasticity_en.shape[0] != N_CORES:
-            print("Learning flag is set to default!")
-            print("All the cores receive the same learning flag!")
-            self.plasticity_en = np.array([False for _ in range(N_CORES)],
-                                          'bool')
-        else:
-            self.plasticity_en = np.array(plasticity_en, dtype='bool')
 
-        if len(gated_learning) != N_CORES:
-            print("Gated learning flag is set to default!")
-            print("All the cores receive the same gated learning flag!")
-            self.gated_learning = np.array([False for _ in range(N_CORES)],
-                                           'bool')
+        if not hasattr(plasticity_en, '__len__'):
+            print("All the cores receive the same learning flag ({0})!".format(plasticity_en))
+            self.plasticity_en = np.array([plasticity_en]*N_CORES, 'bool')
+        else:
+            self.plasticity_en = np.array(plasticity_en, 'bool')
+        
+        assert(hasattr(self.plasticity_en, '__len__'))
+
+        if not hasattr(gated_learning, '__len__'):
+            print("All the cores receive the same gated learning flag ({0})!".format(gated_learning))
+            self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
         else:
             self.gated_learning = np.array(gated_learning, dtype='bool')
 
@@ -542,6 +542,10 @@ class ConfigurationNSAT(object):
         self.init_default_corecfgs(N_STATES, N_NEURONS, N_INPUTS)
         self.set_ext_events()
         self.set_default_monitors(spk_rec_mon, syn_ids_rec)
+
+    def copy(self):
+        import copy
+        return copy.deepcopy(self)
 
     def __getitem__(self, k):
         return self.core_cfgs[k]

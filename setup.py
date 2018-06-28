@@ -27,6 +27,7 @@ setup(name='pyNSATlib',
       include_package_data=True,
       install_requires=['numpy',
                         'pyNCSre',
+                        'igraph',
                         'matplotlib'],
       dependency_links=['https://github.com/inincs/pyNCS/tarball/master#egg=package-1.0'],
       zip_safe=False)

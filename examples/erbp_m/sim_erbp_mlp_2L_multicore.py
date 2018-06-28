@@ -26,8 +26,8 @@ N_FEAT1 = 16
 stride = 2
 ksize = 5
 
-exp_name          = '/tmp/mnist_mlp_2L_multicore'
-exp_name_test     = '/tmp/mnist_mlp_2L_multicore_test/'
+exp_name          = '/tmp/mnist_mlp_2L'
+exp_name_test     = '/tmp/mnist_mlp_2L_test/'
 
 #Globals
 inputsize = 28
@@ -41,11 +41,11 @@ Np = 10
 Ng2 = Np
 Ng3 = Np
 
-N_CORES = 2
+N_CORES = 1
 n_mult = 1
 t_sample_test = 3000
 t_sample_train = 1500
-nepochs = 1
+nepochs = 5
 N_train = 500
 N_test = 100
 test_every = 1
@@ -62,84 +62,68 @@ print("################## Constructing Network Connections #####################
 wpg  = 96
 wgp  = 37    
 
-setup       = NSATSetup(ncores = N_CORES)
+net_graph       = LogicalGraphSetup()
 
-pop_data    = setup.create_external_population(Nv, 0, name = 'Data')
-pop_lab     = setup.create_external_population(Nl, 0, name = 'Label')
-pop_hid1     = setup.create_population(n = Nh, core = 0, neuron_cfg = erf_ntype, name = 'Hid1')
-pop_hid2     = setup.create_population(n = Nh, core = 1, neuron_cfg = erf_ntype, name = 'Hid2')
-pop_out     = setup.create_population(n = Nl, core = 1, neuron_cfg = output_ntype, name = 'Out')
-pop_err_pos = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype, name = 'ERR+')
-pop_err_neg = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype, name = 'ERR-')
+pop_data    = net_graph.create_population(Population(name = 'data   ', n = Nv, core = -1, is_external = True))
+pop_lab     = net_graph.create_population(Population(name = 'lab    ', n = Nl, core = -1, is_external = True))
+pop_hid1    = net_graph.create_population(Population(name = 'hid1   ', n = Nh, core = 0, neuron_cfg = erf_ntype))
+pop_hid2    = net_graph.create_population(Population(name = 'hid2   ', n = Nh, core = 1, neuron_cfg = erf_ntype))
+pop_out     = net_graph.create_population(Population(name = 'out    ', n = Nl, core = 0, neuron_cfg = output_ntype))
+pop_err_pos = net_graph.create_population(Population(name = 'err_pos', n = Nl, core = 0, neuron_cfg = error_ntype))
+pop_err_neg = net_graph.create_population(Population(name = 'err_neg', n = Nl, core = 0, neuron_cfg = error_ntype))
 
-Connection(setup, pop_data, pop_hid1, 0).connect_random_uniform(low=-16, high=16)
-Connection(setup, pop_hid1, pop_hid2, 0).connect_random_uniform(low=-16, high=16)
-Connection(setup, pop_hid2, pop_out, 0).connect_random_uniform(low=-4, high=4)
+net_graph.create_connection(pop_data, pop_hid1, 0, connect_random_uniform(low=-16, high=16))
+net_graph.create_connection(pop_hid1, pop_hid2, 0, connect_random_uniform(low=-16, high=16))
+net_graph.create_connection(pop_hid2, pop_out,  0, connect_random_uniform(low=-4, high=4))
 
-#eRBP related connections
-Connection(setup, pop_out, pop_err_pos, 0).connect_one2one(-wpg)
-Connection(setup, pop_out, pop_err_neg, 0).connect_one2one(wpg)
+net_graph.create_connection(pop_out, pop_err_pos, 0, connect_one2one(-wpg))
+net_graph.create_connection(pop_out, pop_err_neg, 0, connect_one2one(wpg))
 
-Connection(setup, pop_lab, pop_err_pos, 0).connect_one2one(wpg)
-Connection(setup, pop_lab, pop_err_neg, 0).connect_one2one(-wpg)
+net_graph.create_connection(pop_lab, pop_err_pos, 0, connect_one2one(wpg))
+net_graph.create_connection(pop_lab, pop_err_neg, 0, connect_one2one(-wpg))
 
-cx_p=Connection(setup, pop_err_pos, pop_hid1, 1)
-cx_p.connect_shuffle(3000)
-cx_n=Connection(setup, pop_err_neg, pop_hid1, 1)
-cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
+p,w = connect_shuffle(3000)(pop_err_pos, pop_hid1)
 
-cx_p=Connection(setup, pop_err_pos, pop_hid2, 1)
-cx_p.connect_shuffle(3000)
-cx_n=Connection(setup, pop_err_neg, pop_hid2, 1)
-cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
+net_graph.create_connection(pop_err_pos, pop_hid1, 1, [p,  w])
+net_graph.create_connection(pop_err_neg, pop_hid1, 1, [p, -w])
+#cx_n=Connection(net_graph, pop_err_neg, pop_hid1, 1)
+#cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
 
-Connection(setup, pop_err_pos, pop_out, 1).connect_one2one(wgp)
-Connection(setup, pop_err_neg, pop_out, 1).connect_one2one(-wgp)
+p, w = connect_shuffle(3000)(pop_err_pos, pop_hid2)
+
+net_graph.create_connection(pop_err_pos, pop_hid2, 1, [p,  w])
+net_graph.create_connection(pop_err_neg, pop_hid2, 1, [p, -w])
+#cx_n=Connection(net_graph, pop_err_neg, pop_hid1, 1)
+#cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
+
+
+net_graph.create_connection(pop_err_pos, pop_out, 1, connect_one2one(wgp))
+net_graph.create_connection(pop_err_neg, pop_out, 1, connect_one2one(-wgp))
+
+setup = net_graph.generate_multicore_setup(NSATSetup)
 
 print("################### Constructing NSAT Configuration ##############################")
-spk_rec_mon = [np.arange(setup.nneurons[0]), np.arange(setup.nneurons[1], dtype='int')]
-#spk_rec_mon = [range(setup.nneurons[i]) for i in range(setup.ncores)]
+#spk_rec_mon = [np.arange(setup.nneurons[0]), np.arange(setup.nneurons[1], dtype='int')]
+spk_rec_mon = [[] for i in range(setup.ncores)]
 spk_rec_mon[pop_out.core] = pop_out.addr
 
 #TODO: fold following in NSATSetup
-cfg_train = nsat.ConfigurationNSAT(
+cfg_train = setup.create_configuration_nsat(
                    sim_ticks = sim_ticks,
-                   N_CORES = setup.ncores,
-                   N_NEURONS= setup.nneurons, 
-                   N_INPUTS = setup.ninputs,
-                   N_STATES = setup.nstates,
-                   bm_rng = True,
                    w_check = False,
                    spk_rec_mon = spk_rec_mon,
-                   monitor_spikes = False,
-                   gated_learning = [True]*setup.ncores,
-                   plasticity_en = [True]*setup.ncores)
-
-# Parameters groups mapping function
-for i in range(setup.ncores):
-    cfg_train.core_cfgs[i] = setup.create_coreconfig(i)
-cfg_train.L1_connectivity = setup.do_L1connections()
+                   monitor_spikes = True,
+                   gated_learning = True,
+                   plasticity_en = True)
 
 spk_rec_mon = [[] for i in range(setup.ncores)]
 spk_rec_mon[pop_out.core] = pop_out.addr
 
-cfg_test = nsat.ConfigurationNSAT(
-                   sim_ticks = sim_ticks_test,
-                   N_CORES = setup.ncores,
-                   N_NEURONS= setup.nneurons, 
-                   N_INPUTS = setup.ninputs,
-                   N_STATES = setup.nstates,
-                   bm_rng = True,
-                   w_check = False,
-                   plasticity_en = [False]*setup.ncores,
-                   gated_learning = [False]*setup.ncores,
-                   spk_rec_mon = spk_rec_mon,
-                   monitor_spikes = True,
-                   ben_clock=True)
-
-for i in range(setup.ncores):
-    cfg_test.core_cfgs[i] = copy.copy(cfg_train.core_cfgs[i])
-cfg_test.L1_connectivity = cfg_train.L1_connectivity
+cfg_test = cfg_train.copy()
+cfg_test.sim_ticks = sim_ticks_test
+cfg_test.plasticity_en[:] = False
+cfg_test.spk_rec_mon = spk_rec_mon
+cfg_test.monitor_spikes = True
 
 
 SL_train = create_spike_train(data_train[:N_train], t_sample_train, scaling = inp_fact, with_labels = True)
@@ -153,10 +137,10 @@ cfg_train.set_ext_events(ext_evts_data_train)
 
 print("################## Writing Parameters Files ##################")
 c_nsat_writer_train = nsat.C_NSATWriter(cfg_train, path=exp_name, prefix='')
-# c_nsat_writer_train.write()
+c_nsat_writer_train.write()
 
 c_nsat_writer_test = nsat.C_NSATWriter(cfg_test, path=exp_name_test,prefix='')
-# c_nsat_writer_test.write()
+c_nsat_writer_test.write()
 
 fname_train = c_nsat_writer_train.fname
 fname_test = c_nsat_writer_test.fname
@@ -200,5 +184,11 @@ if __name__ == '__main__':
                 print(exp_name)
                 print(pip)
 
-
+    try:
+        import experimentTools as et
+        d=et.mksavedir(pre='Results_Scripts/')
+        et.save(pip, 'pip.pkl')
+        et.annotate('res',text=str(pip))
+    except ImportError:
+        print('saving disabled due to missing experiment tools')
      
