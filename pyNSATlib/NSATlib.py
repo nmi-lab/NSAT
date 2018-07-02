@@ -495,16 +495,25 @@ class ConfigurationNSAT(object):
             self.single_core = False
         self.routing_en = False
 
-
-        if not hasattr(plasticity_en, '__len__'):
+        # if not hasattr(plasticity_en, '__len__'):
+        #     print("All the cores receive the same learning flag ({0})!".format(plasticity_en))
+        #     self.plasticity_en = np.array([plasticity_en]*N_CORES, 'bool')
+        # else:
+        #     self.plasticity_en = np.array(plasticity_en, 'bool')
+        if len(plasticity_en) != N_CORES:
             print("All the cores receive the same learning flag ({0})!".format(plasticity_en))
             self.plasticity_en = np.array([plasticity_en]*N_CORES, 'bool')
         else:
             self.plasticity_en = np.array(plasticity_en, 'bool')
-        
+
         assert(hasattr(self.plasticity_en, '__len__'))
 
-        if not hasattr(gated_learning, '__len__'):
+        # if not hasattr(gated_learning, '__len__'):
+        #     print("All the cores receive the same gated learning flag ({0})!".format(gated_learning))
+        #     self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
+        # else:
+        #     self.gated_learning = np.array(gated_learning, dtype='bool')
+        if len(gated_learning) != N_CORES:
             print("All the cores receive the same gated learning flag ({0})!".format(gated_learning))
             self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
         else:
