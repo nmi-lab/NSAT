@@ -16,15 +16,17 @@ EXPDIR=examples
 LIBDIR=lib
 PYTHON=pyNSATlib
 
-CC=gcc
-LINKER=gcc -o
-# LDFLAGS = -lm -std=c99 -pthread
-LDFLAGS = -lm -pthread
+#CC=gcc
+#LINKER=gcc -o
+#CC=clang++
+#LINKER=clang++ -o
+#LDFLAGS = -lm -std=c99 -pthread
+LDFLAGS = -pthread
 # LDFLAGS = -lm -std=c99 -pg -pthread -no-pie # profiler
-# LDFLAGS = -lm -pthread -pg
+#LDFLAGS = -lm -pthread -pg
 
 ifeq ($(MODE), DB)
-	CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -fPIC -I$(INCDIR)
+  	CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -fPIC -I$(INCDIR)
 	# CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -I$(INCDIR)
 	# CFLAGS=-g -Wall -pedantic -fstack-protector-all -pg -I$(INCDIR)
 else ifeq ($(MODE), LB)
@@ -37,8 +39,8 @@ endif
 SOURCES  := $(wildcard $(SRCDIR)/*.c)
 OBJECTS  := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-# DEMOSRC  := $(wildcard $(DEMODIR)/*.c)
-DEMOSRC  := $(DEMODIR)/run_any_test.c
+DEMOSRC  := $(wildcard $(DEMODIR)/*.c)
+#DEMOSRC  := $(DEMODIR)/run_any_test.c
 DEMOOBJ  := $(DEMOSRC:$(DEMODIR)/%.c=$(OBJDIR)/%.o)
 
 INCLUDES := $(wildcard $(INCDIR)/*.h)
@@ -65,7 +67,7 @@ $(DEMOOBJ): $(OBJDIR)/%.o : $(DEMODIR)/%.c
 
 
 $(LIBDIR)/$(LTARGET): $(OBJECTS)
-	gcc  -shared -o $@ $^ $(LDFLAGS)
+	$(CC) -shared -o $@ $^ $(LDFLAGS)
 
 .PHONY: clean cleanall
 

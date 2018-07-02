@@ -14,8 +14,8 @@ def read_from_file_weights(fname):
     import struct as st
     with open(fname, "rb") as f:
         cont = f.read()
-    size = int(len(cont) / 32)
-    return np.array(st.unpack('QQQIi' * size, cont))
+    size = int(len(cont) // 4)
+    return np.array(st.unpack('i' * size, cont))
 
 
 def read_synaptic_weights(core_cfg, wgt_file, ptr_file, return_cw=False):

@@ -177,7 +177,7 @@ if __name__ == '__main__':
     np.save('w2', w2)
     # w = c_nsat_reader.read_synaptic_weights()
 
-    out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                    sim_ticks=sim_ticks)
     np.save('spk0', out_spikelist[0].spike_times)
     np.save('spk1', out_spikelist[1].spike_times)

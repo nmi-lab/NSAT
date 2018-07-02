@@ -25,6 +25,8 @@ def find_nsat_library():
     '''
     ldlp = os.environ.get('LD_LIBRARY_PATH')
     if ldlp is None:
+        print(os.getcwd())
+        return '../../lib/libnsat.so'
         raise RuntimeError('LD_LIBRARY_PATH not set')
     ldlp = ldlp.split(':')
     for p in ldlp:
@@ -224,7 +226,7 @@ class coreConfig(object):
     def __init__(self, n_states, n_neurons, n_inputs):
         for i in self.NSAT_parameters:
             setattr(self, i, None)
-        self.gen_core_cfg(n_states, n_neurons, n_inputs)
+        self.gen_core_cfg(self, n_states, n_neurons, n_inputs)
         self.default_core_cfg = copy.deepcopy(self)
 
     def __repr__(self):
@@ -237,7 +239,7 @@ class coreConfig(object):
                    L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz,**self.__dict__)
                   
 
-    def gen_core_cfg(core_cfg, n_states, n_neurons, n_inputs):
+    def gen_core_cfg(self, core_cfg, n_states, n_neurons, n_inputs):
 
         rn_states = list(range(n_states))     # number of states per neuron
         N_GROUPS = core_cfg.n_groups = 8
