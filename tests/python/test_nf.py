@@ -13,7 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
@@ -117,6 +117,8 @@ def kernel_(size, amp=(5, 5), sigma=(1.0/28.0, 1.0/20.0)):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 2500
     N_CORES = 1
     N_NEURONS = [100]
@@ -225,7 +227,7 @@ if __name__ == '__main__':
 
     plt.figure()
     S = np.maximum(states_core0[:, :, 0], 0)
-    plt.imshow(S, interpolation='spline36', cmap=plt.cm.gray,
+    plt.imshow(S, interpolation='spline36', cmap=plt.get_cmap('gray'),#plt.cm.gray,
                aspect='auto', origin='lower')
 
     spks = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
@@ -238,4 +240,6 @@ if __name__ == '__main__':
     mat = np.zeros((sim_ticks, N_NEURONS[0]))
     mat[events[0].astype('i'), events[1].astype('i')] = 1
 
-    plt.show()
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

@@ -4,11 +4,13 @@ import warnings
 
 def read_from_file(fname):
     import struct as st
-    with open(fname, "rb") as f:
-        cont = f.read()
-    size = int(len(cont) // 4)
-    return np.array(st.unpack('i' * size, cont)).astype('i')
-
+    try:
+        with open(fname, "rb") as f:
+            cont = f.read()
+        size = int(len(cont) // 4)
+        return np.array(st.unpack('i' * size, cont)).astype('i')
+    except:
+        print('nsat_reader:read_from_file %s file not found or unreadable' % fname)
 
 def read_from_file_weights(fname):
     import struct as st
@@ -89,7 +91,7 @@ class C_NSATReader(NSATReader):
             for i in range(len(ww)):
                 if len(ww[i * 5:i * 5 + 5]) != 0:
                     time, pre, post_, state, val = ww[i * 5:i * 5 + 5]
-                    if post_ == post:
+                    if post_ in post:
                         W[time, pre, state] = val
             W_all.append(W[1:, ...])
         return W_all

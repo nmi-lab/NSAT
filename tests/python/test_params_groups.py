@@ -11,8 +11,11 @@
 import numpy as np
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
+import os
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 100         # Simulation time
     N_CORES = 1             # Number of cores
     N_NEURONS = [8]         # Number of neurons
@@ -103,4 +106,7 @@ if __name__ == '__main__':
     for i in range(1, 8):
         ax = fig.add_subplot(8, 1, i)
         ax.plot(states_core0[:-1, i, 0], 'b', lw=3)
-    plt.show()
+
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

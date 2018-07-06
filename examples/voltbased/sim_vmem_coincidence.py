@@ -316,7 +316,7 @@ if __name__ == '__main__':
     #                                 sim_ticks=sim_ticks,
     #                                 id_list=range(N_NEURONS))
 
-    test_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    test_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                     sim_ticks=sim_ticks,
                                     id_list=range(N_NEURONS))
 

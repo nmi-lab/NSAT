@@ -12,7 +12,7 @@ import numpy as np
 from pyNCSre import pyST
 import pyNSATlib as nsat
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 import matplotlib.pylab as plt
 import matplotlib
@@ -40,6 +40,8 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     np.random.seed(100)             # Numpy RNG seed
     pyST.STCreate.seed(130)         # PyNCS RNG seed
     sim_ticks = 1000                # Simulation time
@@ -231,4 +233,7 @@ if __name__ == '__main__':
     plt.setp(ax1.get_xticklabels(), visible=False)
     ax1.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.tight_layout()
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

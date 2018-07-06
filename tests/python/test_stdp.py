@@ -12,9 +12,10 @@ import numpy as np
 from pyNCSre import pyST
 import pyNSATlib as nsat
 from corr_spike_trains import correlated_spikes
+#import corr_spike_trains
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 def SimSpikingStimulus(rates, t_sim=None):
     m = np.shape(rates)[0]
@@ -39,6 +40,8 @@ def SimSpikingStimulus(rates, t_sim=None):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 5000                # Simulation ticks
     N_CORES = 1                     # Number of cores
     N_NEURONS = [1]                 # Number of neurons per core (list)
@@ -147,11 +150,14 @@ if __name__ == '__main__':
     ww = np.array(c_nsat_reader.read_c_nsat_synaptic_weights()[0])
 
     # spk = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'), sim_ticks=sim_ticks)
-    spk = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    spk = nsat.importAER(c_nsat_reader.read_events(0),
                          sim_ticks=sim_ticks)
     spk.raster_plot()
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(ww[:N_INPUTS[0], N_INPUTS[0], 1], 'k.')
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

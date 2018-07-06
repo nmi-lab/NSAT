@@ -13,8 +13,11 @@ import numpy as np
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 100         # Simulation time
     N_CORES = 1             # Number of cores
     N_NEURONS = [2]         # Number of neurons per core (list)
@@ -122,4 +125,7 @@ if __name__ == '__main__':
         ax.plot(states_core0[:-1, 0, i-1], 'b', lw=3)
         ax.plot(states_core0[:-1, 1, i-1], 'r', lw=3)
         # ax.plot(states_core0[:-1, 0, i-1], 'r--', lw=1, alpha=0.4)
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
