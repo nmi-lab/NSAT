@@ -171,8 +171,8 @@ if __name__ == '__main__':
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[core][0], states[core][1]
 
-    wt = c_nsat_reader.read_synaptic_weights_history()[0]
-    print(wt.shape)
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[130, 150, 120])
+    wt, pids = wt[0], pids[0]
     in_spikelist = SL
     out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                    sim_ticks=sim_ticks,
@@ -201,7 +201,8 @@ if __name__ == '__main__':
     ax = fig.add_subplot(5, 1, i, sharex=ax1)
     for t in SL[0].spike_times:
         plt.axvline(t, color='k', alpha=.4)
-    ax.plot(wt[:, 101, 2], 'r', lw=3)
+    ax.plot(wt[:, 19, 1], 'r', lw=3)
+    # ax.imshow(wt[:, :, 1], aspect='auto', interpolation='nearest')
     ax.set_ylabel('$w$')
     ax.set_xlabel('Time Step')
     ax.get_yaxis().set_label_coords(-0.12, 0.5)

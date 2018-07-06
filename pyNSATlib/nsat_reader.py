@@ -73,7 +73,7 @@ class C_NSATReader(NSATReader):
         '''
         return self.read_synaptic_weights_history(*args, **kwargs)
 
-    def read_synaptic_weights_history(self, post=None):
+    def read_synaptic_weights_history(self, post=[]):
         '''
         Read weights monitored using monitor_weights=True.
         Inputs:
@@ -81,20 +81,24 @@ class C_NSATReader(NSATReader):
         Outputs:
         A list of numpy arrays of shape (timesteps, pre-neuron id (including input neurons), state). Each item in the list corresponds to a core
         '''
-        W_all = []
+        W_all, Pre_ids_all = [], []
         for p, core_cfg in self.cfg:
             n_units = core_cfg.n_inputs + core_cfg.n_neurons
             ww = read_from_file_weights(self.fname.synw + '_core_' + str(p) + '.dat')
             # len_ww = ww.shape[0]
             W = np.zeros((self.cfg.sim_ticks, n_units,
-                          core_cfg.n_states), 'int')
+                          core_cfg.n_states), 'i')
+            if len(post) != 0:
+                pre_ids = []
             for i in range(len(ww)):
                 if len(ww[i * 5:i * 5 + 5]) != 0:
                     time, pre, post_, state, val = ww[i * 5:i * 5 + 5]
                     if post_ in post:
                         W[time, pre, state] = val
+                        pre_ids.append(pre)
             W_all.append(W[1:, ...])
-        return W_all
+            Pre_ids_all.append(pre_ids)
+        return W_all, Pre_ids_all
 
     def read_c_nsat_states(self, *args, **kwargs):
         return self.read_states(*args, **kwargs)
