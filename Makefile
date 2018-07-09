@@ -16,14 +16,18 @@ EXPDIR=examples
 LIBDIR=lib
 PYTHON=pyNSATlib
 
-#CC=gcc
-#LINKER=gcc -o
-#CC=clang++
-#LINKER=clang++ -o
-#LDFLAGS = -lm -std=c99 -pthread
-LDFLAGS = -pthread
+CC=gcc
+LINKER=gcc -o
+# LDFLAGS = -lm -std=c99 -pthread
+LDFLAGS = -lm -pthread
+#LDFLAGS = -pthread
 # LDFLAGS = -lm -std=c99 -pg -pthread -no-pie # profiler
 #LDFLAGS = -lm -pthread -pg
+
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+	LDFLAGS = -pthread
+endif
 
 ifeq ($(MODE), DB)
   	CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -fPIC -I$(INCDIR)
