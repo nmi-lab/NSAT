@@ -23,7 +23,7 @@
 // #define __USE_XOPEN_EXTENDED /* siginfo_t */
 
 #include "nsat.h"
-#include "osx-pthreads.h"
+#include "osx_pthreads.h"
 
 extern inline void over_under_flow(nsat_core *core);
 
@@ -1049,6 +1049,7 @@ int iterate_nsat(fnames *fname) {
 
   /* Open parameters file */
   fp = fopen(fname->params, "rb");
+  printf("nsat:iterate_nsat() %s\n", fname->params);
   file_test(fp, fname->params);
 
   /* Read global parameters */

@@ -88,8 +88,10 @@ class C_NSATReader(NSATReader):
             # len_ww = ww.shape[0]
             W = np.zeros((self.cfg.sim_ticks, n_units,
                           core_cfg.n_states), 'i')
-            if len(post) != 0:
-                pre_ids = []
+            
+            if (len(post) == 0):
+                post = range(n_units)
+            pre_ids = []
             for i in range(len(ww)):
                 if len(ww[i * 5:i * 5 + 5]) != 0:
                     time, pre, post_, state, val = ww[i * 5:i * 5 + 5]
@@ -107,7 +109,12 @@ class C_NSATReader(NSATReader):
         S = []
         for p, core_cfg in self.cfg:
             size = len(self.cfg.spk_rec_mon[p]) * core_cfg.n_states + 1
-            tmp = read_from_file(self.fname.states + '_core_' + str(p) + '.dat')
+            filename = self.fname.states + '_core_' + str(p) + '.dat'
+            tmp = read_from_file(filename)
+            if ( tmp is None ):
+                print('Error nsat_reader:read_states() read_from_file(\'%s\') call returned None' % filename) 
+                return S
+            
             res = np.zeros((self.cfg.sim_ticks, len(self.cfg.spk_rec_mon[p]),
                             core_cfg.n_states + 1), 'int')
             for i in range(self.cfg.sim_ticks - 1):

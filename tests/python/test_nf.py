@@ -233,12 +233,20 @@ if __name__ == '__main__':
     spks = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
                           sim_ticks=sim_ticks,
                           id_list=list(range(N_NEURONS[0])))
-    spks.raster_plot()
-
+    
+    raster = spks.raster_plot()
+    raster.savefig('/tmp/%s_raster.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    raster.close()
+    
     # Plot the results
-    events = spks.convert()
-    mat = np.zeros((sim_ticks, N_NEURONS[0]))
-    mat[events[0].astype('i'), events[1].astype('i')] = 1
+#     events = spks.convert()
+#     mat = np.zeros((sim_ticks, N_NEURONS[0]))
+#     print(mat.shape)
+#     print(len(events[0]))
+#     print(len(events[1]))
+#     mat[events[0].astype('i'), events[1].astype('i')] = 1
+    
+
 
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()

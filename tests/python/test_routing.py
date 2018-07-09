@@ -127,7 +127,7 @@ if __name__ == '__main__':
 
     # Load the results (read binary files)
     c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
-    states = c_nsat_reader.read_c_nsat_states()
+    states = c_nsat_reader.read_states()
     states_core0 = states[0][1]
     states_core1 = states[1][1]
 

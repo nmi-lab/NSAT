@@ -395,7 +395,7 @@ def check_matrix(core_cfg, A):
 def check_vector(core_cfg, vector, dtype='int'):
     Ns = core_cfg.n_states
     if np.shape(vector) != (core_cfg.n_groups, Ns):
-        vector = [vector for i in range(core_cfg.n_groups)]
+        vector = [i.vector for i in range(core_cfg.n_groups)]
     assert np.shape(vector) == (core_cfg.n_groups, Ns)
     return np.array(vector, dtype=dtype)
 
@@ -555,7 +555,6 @@ class ConfigurationNSAT(object):
         self.set_default_monitors(spk_rec_mon, syn_ids_rec)
 
     def copy(self):
-        import copy
         return copy.deepcopy(self)
 
     def __getitem__(self, k):
@@ -573,12 +572,12 @@ class ConfigurationNSAT(object):
         self.spk_rec_mon = spk_rec_mon
         if self.spk_rec_mon is None:
             self.spk_rec_mon = [
-                np.arange(p.n_neurons, dtype='int') for i, p in self]
+                np.arange(p.n_neurons, dtype='int') for _, p in self]
 
         # Synapse ids to be monitored
         if syn_ids_rec is None and self.ext_evts is False:
             self.syn_ids_rec = [
-                np.arange(p.n_inputs + p.n_neurons, dtype='int') for i, p in self]
+                np.arange(p.n_inputs + p.n_neurons, dtype='int') for _, p in self]
         else:
             self.syn_ids_rec = np.array(syn_ids_rec, 'int')
 
@@ -633,7 +632,7 @@ class ConfigurationNSAT(object):
 
     def set_L1_connectivity(self, l1_conn):
         assert type(l1_conn) == dict, "l1_conn must be a dictionary"
-        for k, v in l1_conn.items():
+        for k, _ in l1_conn.items():
             assert len(k) == 2, "keys must be (src_core, src_neuron)"
         self.L1_connectivity = l1_conn.copy()
 
@@ -641,7 +640,7 @@ class ConfigurationNSAT(object):
         '''
         Set all parameter groups for all cores
         '''
-        for p, core in self:
+        for _, core in self:
             self.set_groups_core(core)
         self.groups_set = True
 

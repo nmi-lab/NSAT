@@ -192,7 +192,8 @@ if __name__ == '__main__':
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
     # wt = c_nsat_reader.read_c_nsat_syn_evo()[0][0]
-    wt = c_nsat_reader.read_synaptic_weights_history()[0]
+    wt, pids = c_nsat_reader.read_synaptic_weights_history()
+    wt = wt[0]
 
     # spk = nsat.importAER(nsat.read_from_file(
     #     c_nsat_writer.fname.events + '_core_0.dat'), sim_ticks=sim_ticks)

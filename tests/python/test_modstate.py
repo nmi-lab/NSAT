@@ -151,7 +151,7 @@ if __name__ == '__main__':
     states_core0 = states[0][1]
 
     # wt = c_nsat_reader.read_c_nsat_weights_evo(0)[:, 1, 1]
-    wt = c_nsat_reader.read_c_nsat_weights_evo(0)
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[0])
     in_spikelist = SL
     out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks,

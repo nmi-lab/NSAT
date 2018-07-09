@@ -171,9 +171,12 @@ if __name__ == '__main__':
     time_core0, states_core0 = states[0][0], states[0][1]
 
     # w0 = c_nsat_reader.read_synaptic_weights_history(post=0)[0][:, 0, 1]
-    w0 = c_nsat_reader.read_synaptic_weights_history(post=5)[0][:, 4, 1]
-    w1 = c_nsat_reader.read_synaptic_weights_history(post=6)[0][:, 4, 1]
-    w2 = c_nsat_reader.read_synaptic_weights_history(post=7)[0][:, 4, 1]
+    w0, pids0 = c_nsat_reader.read_synaptic_weights_history(post=[5])
+    w0 = w0[0][:, 4, 1]
+    w1, pids1 = c_nsat_reader.read_synaptic_weights_history(post=[6])
+    w1 = w1[0][:, 4, 1]
+    w2, pids2 = c_nsat_reader.read_synaptic_weights_history(post=[7])
+    w2 = w2[0][:, 4, 1]
     np.save('w0', w0)
     np.save('w1', w1)
     np.save('w2', w2)
