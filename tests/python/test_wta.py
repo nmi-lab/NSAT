@@ -13,7 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 def SimSpikingStimulus(rates=[5, 10], t_start=1000, t_stop=4000):
     n = np.shape(rates)[0]
@@ -131,6 +131,8 @@ def pretty_fig(spks, states, t_stop=1000):
 
 
 if __name__ == "__main__":
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 60000           # Simulation ticks
     N_CORES = 1                 # Number of cores
     N_NEURONS = [4]             # Number of neurons per core
@@ -238,11 +240,14 @@ if __name__ == "__main__":
     states_core0 = states[0][1]
 
     in_spikelist = SL
-    out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
     spks = out_spikelist.convert("[times,ids]")
     spks = np.vstack([spks[0], spks[1]]).astype('int')
     pretty_fig(spks, states_core0, t_stop=t_stop)
-    plt.show()
+
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

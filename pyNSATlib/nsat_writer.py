@@ -162,8 +162,14 @@ class C_NSATWriter(NSATWriter):
             # Core parameters
             for p, core_cfg in cfg:
                 fh.write(pack(cfg.ext_evts, '?'))
-                fh.write(pack(cfg.plasticity_en[p], '?'))
-                fh.write(pack(cfg.gated_learning[p], '?'))
+#                if ( p < cfg.plasticity_en.size ):
+                try:
+                    fh.write(pack(cfg.plasticity_en[p], '?'))
+#                else: fh.write(bytes('cfgplasticity_en[p] OOB','utf-8'))
+                except: fh.write(bytes('cfgplasticity_en[p] OOB','utf-8'))
+                try:
+                    fh.write(pack(cfg.gated_learning[p], '?'))
+                except: fh.write(bytes('cfgggated_lerning_en[p] OOB','utf-8'))
                 fh.write(pack(core_cfg.n_inputs, 'i'))
                 fh.write(pack(core_cfg.n_neurons, 'i'))
                 fh.write(pack(core_cfg.n_states, 'i'))
@@ -202,24 +208,25 @@ class C_NSATWriter(NSATWriter):
 
             # Learning parameters
             for p, core_cfg in cfg:
-                if cfg.plasticity_en[p]:
-                    fh.write(pack(cfg.tstdpmax[p], 'i'))
-                    for j in range(core_cfg.n_lrngroups):
-                        fh.write(pack(core_cfg.tstdp[j], 'i'))
-                        fh.write(pack(core_cfg.plastic[j], '?'))
-                        fh.write(pack(core_cfg.stdp_en[j], '?'))
-                        fh.write(pack(core_cfg.is_stdp_exp_on[j], '?'))
-                        fh.write(pack(core_cfg.tca[j], 'i'))
-                        fh.write(pack(core_cfg.hica[j], 'i'))
-                        fh.write(pack(core_cfg.sica[j], 'i'))
-                        fh.write(pack(core_cfg.slca[j], 'i'))
-                        fh.write(pack(core_cfg.tac[j], 'i'))
-                        fh.write(pack(core_cfg.hiac[j], 'i'))
-                        fh.write(pack(core_cfg.siac[j], 'i'))
-                        fh.write(pack(core_cfg.slac[j], 'i'))
-                        fh.write(pack(core_cfg.is_rr_on[j], '?'))
-                        fh.write(pack(core_cfg.rr_num_bits[j], 'i'))
-
+                try:
+                    if cfg.plasticity_en[p]:
+                        fh.write(pack(cfg.tstdpmax[p], 'i'))
+                        for j in range(core_cfg.n_lrngroups):
+                            fh.write(pack(core_cfg.tstdp[j], 'i'))
+                            fh.write(pack(core_cfg.plastic[j], '?'))
+                            fh.write(pack(core_cfg.stdp_en[j], '?'))
+                            fh.write(pack(core_cfg.is_stdp_exp_on[j], '?'))
+                            fh.write(pack(core_cfg.tca[j], 'i'))
+                            fh.write(pack(core_cfg.hica[j], 'i'))
+                            fh.write(pack(core_cfg.sica[j], 'i'))
+                            fh.write(pack(core_cfg.slca[j], 'i'))
+                            fh.write(pack(core_cfg.tac[j], 'i'))
+                            fh.write(pack(core_cfg.hiac[j], 'i'))
+                            fh.write(pack(core_cfg.siac[j], 'i'))
+                            fh.write(pack(core_cfg.slac[j], 'i'))
+                            fh.write(pack(core_cfg.is_rr_on[j], '?'))
+                            fh.write(pack(core_cfg.rr_num_bits[j], 'i'))
+                except: fh.write(bytes('%d does not exist'.format(p),'utf-8'))
             # Monitor parameters
             # TODO: Separately for every core
             for p, core_cfg in cfg:
@@ -229,8 +236,8 @@ class C_NSATWriter(NSATWriter):
                 fh.write(pack(cfg.monitor_spikes, '?'))
                 fh.write(pack(cfg.monitor_stats, '?'))
 
-            """ Thee following generates the mapping function.
-                Fow now this is a vector with numbers in [0, 8),
+            """ The following generates the mapping function.
+                For now this is a vector with numbers in [0, 8),
                 and every element corresponds to a NSAT neuron
                 unit.
                 Example:

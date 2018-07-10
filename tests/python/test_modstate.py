@@ -13,6 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
 
 import matplotlib
 matplotlib.rcParams['text.usetex'] = False
@@ -38,6 +39,7 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     sim_ticks = 1000        # Number of simulation ticks
     N_CORES = 1             # Number of cores
     N_NEURONS = [1]         # Number of neurons per core (list)
@@ -97,7 +99,7 @@ if __name__ == '__main__':
                                             'bool')
 
     # STDP kernel height of acausal part
-    cfg.core_cfgs[0].hiac = [[-1, 4, 0] for _ in range(nsat.N_LRNGROUPS)]
+    cfg.core_cfgs[0].hiac = [[-1, 4, 0] for _ in range(8)]
 
     cfg.core_cfgs[0].plastic[0] = True          # Plastic states group 0
     cfg.core_cfgs[0].stdp_en[0] = False         # STDP enabled for group 0
@@ -149,7 +151,7 @@ if __name__ == '__main__':
     states_core0 = states[0][1]
 
     # wt = c_nsat_reader.read_c_nsat_weights_evo(0)[:, 1, 1]
-    wt = c_nsat_reader.read_c_nsat_weights_evo(0)
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[0])
     in_spikelist = SL
     out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks,
@@ -190,4 +192,6 @@ if __name__ == '__main__':
     ax.set_xticks([])
     plt.locator_params(axis='y', nbins=4)
 
-    plt.show()
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

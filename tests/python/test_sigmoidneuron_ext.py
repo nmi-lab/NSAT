@@ -21,6 +21,7 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 from scipy.optimize import curve_fit
+import os
 
 def SimSpikingStimulus(stim, t=1000, t_sim=None):
     '''
@@ -36,6 +37,8 @@ def SimSpikingStimulus(stim, t=1000, t_sim=None):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 25000            # Simulation time
     N_CORES = 1                 # Number of cores
     N_test = 2                  # Number of tests
@@ -120,10 +123,7 @@ if __name__ == '__main__':
     cfg.set_ext_events(ext_evts_data)
 
     # Write C NSAT parameters binary files
-    # c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',
-    #                                   prefix='test_sigmoid_ext')
-    c_nsat_writer = nsat.C_NSATWriterMultithread(cfg, path='/tmp',
-                                                 prefix='test_sigmoid_ext')
+    c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_sigmoid_ext')
     c_nsat_writer.write()
 
     # Call the C NSAT
@@ -139,7 +139,7 @@ if __name__ == '__main__':
     # pip = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
     #                      sim_ticks=sim_ticks,
     #                      id_list=range(N_NEURONS[0])).time_slice(1000, sim_ticks-1000).mean_rates()
-    pip = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    pip = nsat.importAER(c_nsat_reader.read_events(0),
                          sim_ticks=sim_ticks,
                          id_list=list(range(N_NEURONS[0]))).time_slice(1000, sim_ticks-1000).mean_rates()
     x = np.arange(pip.shape[0])
@@ -159,4 +159,7 @@ if __name__ == '__main__':
     ax = fig.add_subplot(111)
     ax.plot(x, pip, 'k', lw=2)
     ax.plot(x, sigmoid(x, popt[0], popt[1], popt[2]), 'r--', lw=2)
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

@@ -13,7 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     pyST.STCreate.seed(100)
@@ -39,6 +39,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     pyST.STCreate.seed(100)
     sim_ticks = 50000              # Simulation time
     N_CORES = 1                 # Number of cores
@@ -214,4 +216,7 @@ if __name__ == '__main__':
     #     ax.plot(states_core0[:-1, 16, i-1], 'b', lw=1.5)
 
     # out_spikelist.raster_plot()
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

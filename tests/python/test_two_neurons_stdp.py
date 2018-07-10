@@ -13,7 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
@@ -28,6 +28,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 500             # Simulation ticks
     N_CORES = 1                 # Number of cores
     N_NEURONS = [2]             # Number of neurons per core
@@ -156,7 +158,8 @@ if __name__ == '__main__':
     c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
-    wt = c_nsat_reader.read_c_nsat_weights_evo(2)[0]
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[2])
+    wt = wt[0]
     out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks, id_list=[0])
 
@@ -201,4 +204,7 @@ if __name__ == '__main__':
         plt.axvline(i, color='k', lw=1)
     for i in out_spikelist[1].spike_times:
         plt.axvline(i, color='b', lw=1)
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

@@ -58,8 +58,10 @@ void open_cores_monitor_files(nsat_core *core, fnames *fname, size_t num_cores) 
 
     for(p = 0; p < num_cores; ++p) {
         /* Initialize state monitors */
+		printf("nsat_monitors:open_cores_monitor_files() core %d state file\n",(int)p);
         if (core[p].mon_pms->mon_states) {
-            filename = gen_fname(fname->states, p, 1);
+        		filename = gen_fname(fname->states, p, 1);
+        		printf("nsat_monitors:open_cores_monitor_files() core %d monitors activated\n",(int)p);
             core[p].files->fs = open_monitor_file(filename);
             dealloc(filename);
         }

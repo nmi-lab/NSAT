@@ -46,7 +46,7 @@ class Op(object):
     def grad(self, inputs, g):
         pass
 
-    def infer_shape(node, input_shapes):
+    def infer_shape(self, node, input_shapes):
         pass
 
     def get_params(self, node):
@@ -163,10 +163,10 @@ class Dot(Op):
         # as input. If the other one is not sparse, it has to be converted
         # into a tensor.
 
-        if y.ndim == 1 or x.ndim == 1:
-            bz = (False,)
-        else:
-            bz = (False, False)
+#         if y.ndim == 1 or x.ndim == 1:
+#             bz = (False,)
+#         else:
+#             bz = (False, False)
         return Apply(self, [x, y], [TensorVariable(dtype_out)])
 
     def perform(self, node, inputs, out):
@@ -190,7 +190,7 @@ class Dot(Op):
         return rval
 
 class SynapticDenseConnection(Dot):
-    #This should derive from Dot. It is like Dot, but it has a neuromorphic implementation and restricts the types of input and output variables. The first input varible myst be a Variable (without any inputs) and the second is a SpikeListType 
+    #This should derive from Dot. It is like Dot, but it has a neuromorphic implementation and restricts the types of input and output variables. The first input variable must be a Variable (without any inputs) and the second is a SpikeListType 
     pass
 
 add = Add()
@@ -204,7 +204,7 @@ class Sigmoid(Op):
 
     def make_node(self, a):
         # Note: using x_.type() is dangerous, as it copies x's broadcasting
-        # behaviour
+        # behavior
         out = TensorVariable(a.type)
         return Apply(self, [a], [out])
 

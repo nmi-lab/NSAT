@@ -13,7 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
@@ -26,6 +26,7 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     pyST.STCreate.seed(130)         # pyNCSre random number generator
     np.random.seed(30)              # Numpy random number generator
 
@@ -144,4 +145,7 @@ if __name__ == '__main__':
     for i in range(1, 9):
         ax = fig.add_subplot(8, 1, i)
         ax.plot(states_core0[:, 0, i-1], 'b', lw=2)
-    plt.show()
+        
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))

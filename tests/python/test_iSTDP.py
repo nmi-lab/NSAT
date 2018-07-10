@@ -12,9 +12,10 @@ import numpy as np
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
 
 if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     sim_ticks = 500            # Simulation time
     N_CORES = 1                 # Number of cores
     N_NEURONS = [2]             # Number of neurons per core
@@ -160,11 +161,12 @@ if __name__ == '__main__':
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
-    wt = c_nsat_reader.read_c_nsat_weights_evo([0, 1])[0]
+    wt, _ = c_nsat_reader.read_c_nsat_weights_evo([0, 1])
+    wt = wt[0]
     # cfg.write_hex_weights_monitors(wt[:, 0, 1])
     # out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
     #                                sim_ticks=sim_ticks, id_list=[0])
-    out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'.encode('utf-8')),
+    out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks)
 
     # Plot the results
@@ -209,4 +211,7 @@ if __name__ == '__main__':
         # plt.axvline(i, color='k', lw=1, zorder=0)
     # for i in out_spikelist[1].spike_times:
         # plt.axvline(i, color='b', lw=1, zorder=0)
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
