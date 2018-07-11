@@ -10,7 +10,7 @@ import threading as thrd
 
 test_pattern = re.compile('test_.*\.py')
 test_dir = ''
-py_exec = '/Users/josephnunn/jnunn/Projects/Python-VEnvs/BrainML-venv/bin/python'
+py_exec = 'python'
 halt = 5
 # 
 # def all_tests():
