@@ -37,7 +37,7 @@ def find_nsat_library():
 def run_c_nsat(fname):
     from ctypes import POINTER, cdll, c_int
     from .nsat_writer import c_nsat_fnames, generate_c_fnames
-    
+
     _nsat = cdll.LoadLibrary(find_nsat_library())
 
     # handle = _nsat._handle
@@ -234,8 +234,7 @@ class coreConfig(object):
                    Ninputs: {n_inputs}
                    Nneurons: {n_neurons}
                    Ngroups: {n_groups}
-                   L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz,**self.__dict__)
-                  
+                   L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz, **self.__dict__)
 
     def gen_core_cfg(core_cfg, n_states, n_neurons, n_inputs):
 
@@ -499,8 +498,9 @@ class ConfigurationNSAT(object):
         # else:
         #     self.plasticity_en = np.array(plasticity_en, 'bool')
         if len(plasticity_en) != N_CORES:
-            print("All the cores receive the same learning flag ({0})!".format(plasticity_en))
-            self.plasticity_en = np.array([plasticity_en]*N_CORES, 'bool')
+            print("All the cores receive the same learning flag ({0})!".format(
+                plasticity_en))
+            self.plasticity_en = np.array([plasticity_en] * N_CORES, 'bool')
         else:
             self.plasticity_en = np.array(plasticity_en, 'bool')
 
@@ -512,8 +512,10 @@ class ConfigurationNSAT(object):
         # else:
         #     self.gated_learning = np.array(gated_learning, dtype='bool')
         if len(gated_learning) != N_CORES:
-            print("All the cores receive the same gated learning flag ({0})!".format(gated_learning))
-            self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
+            print("All the cores receive the same gated learning flag ({0})!".format(
+                gated_learning))
+            self.gated_learning = np.array(
+                [gated_learning for _ in range(N_CORES)], 'bool')
         else:
             self.gated_learning = np.array(gated_learning, dtype='bool')
 
