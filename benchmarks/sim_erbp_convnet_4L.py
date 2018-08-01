@@ -16,24 +16,35 @@ import numpy as np
 import shutil
 import time
 from load_mnist import create_spike_train
-# from load_mnist import data_train, data_classify, targets_classify
 import pyNSATlib as nsat
 from pyNSATlib.laxesis import NSATSetup
 from pyNSATlib.laxesis import Population, LogicalGraphSetup, connect_one2one
 from pyNSATlib.laxesis import connect_random_uniform, connect_shuffle
+from pyNSATlib.laxesis import connect_conv2dbank
 from pyNSATlib.laxesis import erf_ntype, error_ntype, output_ntype
+from pyNSATlib.laxesis import erbp_ptype, nonplastic_ptype
+from pyNSATlib.laxesis_neurontypes import OFF
 
 
-def erbp_mlp_2L_multicore(data_train, data_classify, targets_classify,
-                          nepochs=10):
-    exp_name = '/tmp/mnist_mlp_2L'
-    exp_name_test = '/tmp/mnist_mlp_2L_test/'
+def erbp_convnet_4L(data_train, data_classify, targets_classify, nepochs=10):
+    N_FEAT1 = 16  # 16
+    N_FEAT2 = 32  # 32
+    stride1 = 1
+    stride2 = 2
+    ksize = 3
+
+    exp_name = '/tmp/mnist_convnet_4L'
+    exp_name_test = '/tmp/mnist_convnet_4L_test/'
 
     inputsize = 28
     Nchannel = 1
     Nxy = inputsize*inputsize
     Nv = Nxy*Nchannel
     Nl = 10
+    Nconv1 = Nv//stride1//stride1*N_FEAT1//Nchannel
+    Nconv2 = Nconv1//stride2//stride2*N_FEAT1//N_FEAT1
+    Nconv3 = Nconv2//stride1//stride1*N_FEAT2//N_FEAT1
+    Nconv4 = Nconv3//stride2//stride2*N_FEAT2//N_FEAT2
     Nh = 100
 
     t_sample_test = 3000
@@ -51,43 +62,86 @@ def erbp_mlp_2L_multicore(data_train, data_classify, targets_classify,
     wpg = 96
     wgp = 37
 
+    erbp_ptype_ = erbp_ptype.copy()
+    erbp_ptype_.rr_num_bits = 12
+    erbp_ptype_.hiac = [-7, OFF, OFF]
+
+    erf_ntype_ = erf_ntype.copy()
+    erf_ntype_.plasticity_type = [erbp_ptype_, nonplastic_ptype]
+    erf_ntype_.Wgain[0] = 2
+
     net_graph = LogicalGraphSetup()
 
-    pop_data = net_graph.create_population(Population(name='data',
+    pop_data = net_graph.create_population(Population(name='pop_data',
                                                       n=Nv,
                                                       core=-1,
                                                       is_external=True))
-    pop_lab = net_graph.create_population(Population(name='lab',
+    pop_lab = net_graph.create_population(Population(name='pop_lab',
                                                      n=Nl,
                                                      core=-1,
                                                      is_external=True))
-    pop_hid1 = net_graph.create_population(Population(name='hid1',
-                                                      n=Nh,
-                                                      core=0,
-                                                      neuron_cfg=erf_ntype))
-    pop_hid2 = net_graph.create_population(Population(name='hid2',
-                                                      n=Nh,
-                                                      core=1,
-                                                      neuron_cfg=erf_ntype))
-    pop_out = net_graph.create_population(Population(name='out',
+    pop_conv1 = net_graph.create_population(Population(name='pop_conv1',
+                                                       n=Nconv1,
+                                                       core=0,
+                                                       neuron_cfg=erf_ntype_))
+    pop_conv2 = net_graph.create_population(Population(name='pop_conv2',
+                                                       n=Nconv2,
+                                                       core=1,
+                                                       neuron_cfg=erf_ntype_))
+    pop_conv3 = net_graph.create_population(Population(name='pop_conv3',
+                                                       n=Nconv3,
+                                                       core=2,
+                                                       neuron_cfg=erf_ntype_))
+    pop_conv4 = net_graph.create_population(Population(name='pop_conv4',
+                                                       n=Nconv4,
+                                                       core=3,
+                                                       neuron_cfg=erf_ntype_))
+    pop_hid = net_graph.create_population(Population(name='pop_hid',
+                                                     n=Nh,
+                                                     core=3,
+                                                     neuron_cfg=erf_ntype_))
+    pop_out = net_graph.create_population(Population(name='pop_out',
                                                      n=Nl,
                                                      core=0,
                                                      neuron_cfg=output_ntype))
-    pop_err_pos = net_graph.create_population(Population(name='err_pos',
-                                                         n=Nl,
-                                                         core=0,
-                                                         neuron_cfg=error_ntype))
-    pop_err_neg = net_graph.create_population(Population(name='err_neg',
-                                                         n=Nl,
-                                                         core=0,
-                                                         neuron_cfg=error_ntype))
 
-    net_graph.create_connection(pop_data, pop_hid1, 0,
+    net_graph.create_connection(pop_data, pop_conv1, 0,
+                                connect_conv2dbank(inputsize,
+                                                   Nchannel,
+                                                   N_FEAT1,
+                                                   stride1,
+                                                   ksize))
+    net_graph.create_connection(pop_conv1, pop_conv2, 0,
+                                connect_conv2dbank(inputsize,
+                                                   N_FEAT1,
+                                                   N_FEAT1,
+                                                   stride2,
+                                                   ksize))
+    net_graph.create_connection(pop_conv2, pop_conv3, 0,
+                                connect_conv2dbank(inputsize//stride2,
+                                                   N_FEAT1,
+                                                   N_FEAT2,
+                                                   stride1,
+                                                   ksize))
+    net_graph.create_connection(pop_conv3, pop_conv4, 0,
+                                connect_conv2dbank(inputsize//stride2,
+                                                   N_FEAT2,
+                                                   N_FEAT2,
+                                                   stride2,
+                                                   ksize))
+    net_graph.create_connection(pop_conv4, pop_hid, 0,
                                 connect_random_uniform(low=-16, high=16))
-    net_graph.create_connection(pop_hid1, pop_hid2, 0,
-                                connect_random_uniform(low=-16, high=16))
-    net_graph.create_connection(pop_hid2, pop_out,  0,
+    net_graph.create_connection(pop_hid, pop_out, 0,
                                 connect_random_uniform(low=-4, high=4))
+
+    pop_err_pos = net_graph.create_population(Population(name='pop_err_pos',
+                                                         n=Nl,
+                                                         core=0,
+                                                         neuron_cfg=error_ntype))
+    pop_err_neg = net_graph.create_population(Population(name='pop_err_neg',
+                                                         n=Nl,
+                                                         core=0,
+                                                         neuron_cfg=error_ntype))
 
     net_graph.create_connection(pop_out, pop_err_pos, 0, connect_one2one(-wpg))
     net_graph.create_connection(pop_out, pop_err_neg, 0, connect_one2one(wpg))
@@ -95,15 +149,25 @@ def erbp_mlp_2L_multicore(data_train, data_classify, targets_classify,
     net_graph.create_connection(pop_lab, pop_err_pos, 0, connect_one2one(wpg))
     net_graph.create_connection(pop_lab, pop_err_neg, 0, connect_one2one(-wpg))
 
-    p, w = connect_shuffle(3000)(pop_err_pos, pop_hid1)
+    [p, w] = connect_shuffle(2000)(pop_err_pos, pop_conv1)
+    net_graph.create_connection(pop_err_pos, pop_conv1, 1, [p, +w])
+    net_graph.create_connection(pop_err_neg, pop_conv1, 1, [p, -w])
 
-    net_graph.create_connection(pop_err_pos, pop_hid1, 1, [p,  w])
-    net_graph.create_connection(pop_err_neg, pop_hid1, 1, [p, -w])
+    [p, w] = connect_shuffle(2000)(pop_err_pos, pop_conv2)
+    net_graph.create_connection(pop_err_pos, pop_conv2, 1, [p, +w])
+    net_graph.create_connection(pop_err_neg, pop_conv2, 1, [p, -w])
 
-    p, w = connect_shuffle(3000)(pop_err_pos, pop_hid2)
+    [p, w] = connect_shuffle(2000)(pop_err_pos, pop_conv3)
+    net_graph.create_connection(pop_err_pos, pop_conv3, 1, [p, +w])
+    net_graph.create_connection(pop_err_neg, pop_conv3, 1, [p, -w])
 
-    net_graph.create_connection(pop_err_pos, pop_hid2, 1, [p,  w])
-    net_graph.create_connection(pop_err_neg, pop_hid2, 1, [p, -w])
+    [p, w] = connect_shuffle(2000)(pop_err_pos, pop_conv4)
+    net_graph.create_connection(pop_err_pos, pop_conv4, 1, [p, +w])
+    net_graph.create_connection(pop_err_neg, pop_conv4, 1, [p, -w])
+
+    [p, w] = connect_shuffle(3000)(pop_err_pos, pop_hid)
+    net_graph.create_connection(pop_err_pos, pop_hid, 1, [p, +w])
+    net_graph.create_connection(pop_err_neg, pop_hid, 1, [p, -w])
 
     net_graph.create_connection(pop_err_pos, pop_out, 1, connect_one2one(wgp))
     net_graph.create_connection(pop_err_neg, pop_out, 1, connect_one2one(-wgp))
@@ -111,12 +175,11 @@ def erbp_mlp_2L_multicore(data_train, data_classify, targets_classify,
     setup = net_graph.generate_multicore_setup(NSATSetup)
 
     spk_rec_mon = [[] for i in range(setup.ncores)]
-    spk_rec_mon[pop_out.core] = pop_out.addr
 
     cfg_train = setup.create_configuration_nsat(sim_ticks=sim_ticks,
                                                 w_check=False,
                                                 spk_rec_mon=spk_rec_mon,
-                                                monitor_spikes=True,
+                                                monitor_spikes=False,
                                                 gated_learning=True,
                                                 plasticity_en=True)
 
@@ -159,8 +222,7 @@ def erbp_mlp_2L_multicore(data_train, data_classify, targets_classify,
 
     c_nsat_reader_test = nsat.C_NSATReader(cfg_test, fname_test)
 
-    pip, tt = [], []
-    tft, t0t = 0, 0
+    pip, total_time = [], []
     for i in range(nepochs):
         t0 = time.time()
         nsat.run_c_nsat(fname_train)
@@ -184,6 +246,5 @@ def erbp_mlp_2L_multicore(data_train, data_classify, targets_classify,
                                            sim_ticks=sim_ticks_test,
                                            duration=t_sample_test)
                 pip.append(acc)
-        t_total = (tf - t0) + (tft - t0t)
-        tt.append(t_total)
-    return pip, tt
+        total_time.append(tf - t0 + tft - t0t)
+    return pip, total_time
