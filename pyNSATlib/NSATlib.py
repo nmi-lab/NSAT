@@ -14,7 +14,7 @@
 import os
 import numpy as np
 from pyNCSre import pyST
-from global_vars import *
+from .global_vars import *
 import copy
 import _pickle
 
