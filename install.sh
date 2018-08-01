@@ -29,8 +29,17 @@ else
     python2 setup.py develop --user
     echo "pyNSATlib is now installed!"
 
+    if env | grep -q "LD_LIBRARY_PATH"; 
+    then
+        target_lib="$LD_LIBRARY_PATH:`pwd`/lib"
+        echo "LD_LIBDARY_PATH found, now added NSAT lib path!"
+    else
+        target_lib="LD_LIBRARY_PATH="
+        echo "LD_LIBDARY_PATH not found and was created!"
+        echo "NSAT lib path added!"
+    fi
+
     exp_cmd="export "
-    target_lib="$LD_LIBRARY_PATH:`pwd`/lib"
     exp_=$exp_cmd$target_lib
     bashrc=~/.bashrc
     if [ ! -f $bashrc ]
