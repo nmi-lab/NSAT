@@ -14,6 +14,9 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
+import time
+
+sim_ticks = 200                # Simulation ticks
 
 def SimSpikingStimulus(t_sim=None):
     SL = pyST.SpikeList(id_list=[0, 1, 2, 3])
@@ -28,10 +31,9 @@ def SimSpikingStimulus(t_sim=None):
     return SL
 
 
-if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     
-    sim_ticks = 200                # Simulation ticks
     N_CORES = 1                     # Number of cores
     N_NEURONS = [4]                 # Number of neurons per core (list)
     N_INPUTS = [4]                 # Number of inputs per core (list)
@@ -158,15 +160,19 @@ if __name__ == '__main__':
     # Write the C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_stdp')
     c_nsat_writer.write()
+    
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+def run(fnames):
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
-
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
@@ -246,4 +252,15 @@ if __name__ == '__main__':
 
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
-    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+    run(filenames)
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+ 

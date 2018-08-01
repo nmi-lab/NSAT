@@ -22,6 +22,9 @@ import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 from scipy.optimize import curve_fit
 import os
+import time
+
+sim_ticks = 25000            # Simulation time
 
 def SimSpikingStimulus(stim, t=1000, t_sim=None):
     '''
@@ -36,10 +39,10 @@ def SimSpikingStimulus(stim, t=1000, t_sim=None):
     return SL
 
 
-if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+def setup():
+    global SL
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     
-    sim_ticks = 25000            # Simulation time
     N_CORES = 1                 # Number of cores
     N_test = 2                  # Number of tests
     Nv = 100                    # Visible neurons
@@ -125,14 +128,20 @@ if __name__ == '__main__':
     # Write C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_sigmoid_ext')
     c_nsat_writer.write()
+    
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+def run(fnames):
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    nsat.run_c_nsat(fnames)
 
     print("Plotting data")
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
@@ -141,7 +150,7 @@ if __name__ == '__main__':
     #                      id_list=range(N_NEURONS[0])).time_slice(1000, sim_ticks-1000).mean_rates()
     pip = nsat.importAER(c_nsat_reader.read_events(0),
                          sim_ticks=sim_ticks,
-                         id_list=list(range(N_NEURONS[0]))).time_slice(1000, sim_ticks-1000).mean_rates()
+                         id_list=list(range(cfg.core_cfgs[0].n_neurons))).time_slice(1000, sim_ticks-1000).mean_rates()
     x = np.arange(pip.shape[0])
 
     from scipy.optimize import curve_fit
@@ -162,4 +171,15 @@ if __name__ == '__main__':
     
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
-    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+    run(filenames)
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+ 

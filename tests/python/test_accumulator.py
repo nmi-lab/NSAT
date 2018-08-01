@@ -11,8 +11,10 @@
 import numpy as np
 import matplotlib.pylab as plt
 import pyNSATlib as nsat
+import time
+import os
 
-if __name__ == '__main__':
+def setup():
     sim_ticks = 500         # Total simulation time
     N_CORES = 1             # Number of cores
     N_NEURONS = [51]        # Number of neurons per core
@@ -134,4 +136,16 @@ if __name__ == '__main__':
 #     import os
 #     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
 #     plt.close()
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+#      run(filenames)
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))    
+    
+    

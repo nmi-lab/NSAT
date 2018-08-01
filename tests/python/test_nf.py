@@ -14,6 +14,9 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
+import time
+
+sim_ticks = 2500
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
@@ -116,10 +119,9 @@ def kernel_(size, amp=(5, 5), sigma=(1.0/28.0, 1.0/20.0)):
     return w.astype('int')
 
 
-if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     
-    sim_ticks = 2500
     N_CORES = 1
     N_NEURONS = [100]
     N_INPUTS = [100]
@@ -210,13 +212,18 @@ if __name__ == '__main__':
 #                                             prefix='test_nf')
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+def run(fnames):
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     states_core0 = states[0][1]
 
@@ -230,9 +237,9 @@ if __name__ == '__main__':
     plt.imshow(S, interpolation='spline36', cmap=plt.get_cmap('gray'),#plt.cm.gray,
                aspect='auto', origin='lower')
 
-    spks = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
+    spks = nsat.importAER(nsat.read_from_file(fnames.events+'_core_0.dat'),
                           sim_ticks=sim_ticks,
-                          id_list=list(range(N_NEURONS[0])))
+                          id_list=list(range(cfg.core_cfgs[0].n_neurons)))
     
     raster = spks.raster_plot()
     raster.savefig('/tmp/%s_raster.png' % (os.path.splitext(os.path.basename(__file__))[0]))
@@ -250,4 +257,15 @@ if __name__ == '__main__':
 
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
-    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+    run(filenames)
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+ 

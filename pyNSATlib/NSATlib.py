@@ -14,8 +14,9 @@
 import os
 import numpy as np
 from pyNCSre import pyST
-from .global_vars import *
+from global_vars import *
 import copy
+import _pickle
 
 
 def find_nsat_library():
@@ -237,7 +238,7 @@ class coreConfig(object):
                    Nneurons: {n_neurons}
                    Ngroups: {n_groups}
                    L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz,**self.__dict__)
-                  
+                              
 
     def gen_core_cfg(self, core_cfg, n_states, n_neurons, n_inputs):
 
@@ -554,18 +555,56 @@ class ConfigurationNSAT(object):
         self.set_ext_events()
         self.set_default_monitors(spk_rec_mon, syn_ids_rec)
 
+
     def copy(self):
         return copy.deepcopy(self)
+
 
     def __getitem__(self, k):
         return self.core_cfgs[k]
 
+
     def __setitem__(self, k, v):
         self.core_cfgs[k] = v
+
 
     def __iter__(self):
         for i, p in enumerate(self.core_cfgs):
             yield i, p
+            
+            
+    def writeb(self, fh):
+        """ Pickles this object into the supplied binary file handle """
+        try:
+            _pickle.dump(self, fh, fix_imports=False) # Only works for Python >3.4
+#             _pickle.dump(self, fh, protocol=_pickle.HIGHEST_PROTOCOL, fix_imports=False) # Only works for Python >3.4
+        except:
+            print("NSATlib:ConfigurationNSAT.writeb(self,fh) failed to pickle correctly")
+            raise SystemExit
+    
+    
+    def writefileb(self, f):
+        """ Pickles this object into the filename provided """
+        with compression_strategy(f, 'wb') as fh:
+            self.writeb(fh)
+        
+            
+    @staticmethod    
+    def readb(fh):
+        """ Unpickles this object from the supplied binary file handle """
+        try:
+            return _pickle.load(fh, fix_imports=False) # Only works for Python >3.4
+        except:
+            print("NSATlib:ConfigurationNSAT.readb(self,fh) failed to unpickle correctly")
+            raise SystemExit
+        
+            
+    @staticmethod    
+    def readfileb(f):
+        """ Unpickles this object from the filename provided """
+        with compression_strategy(f, 'rb') as fh:
+            return ConfigurationNSAT.readb(fh)
+        
 
     def set_default_monitors(self, spk_rec_mon=None, syn_ids_rec=None):
                 # Neuron ids to be monitored
@@ -583,6 +622,7 @@ class ConfigurationNSAT(object):
 
         self.num_syn_ids_rec = [np.shape(s)[0] for s in self.syn_ids_rec]
 
+
     def init_default_corecfgs(self, n_states_list, n_neurons_list, n_inputs_list):
         '''
         Initializes all the parameters for NSAT to default values (see
@@ -592,6 +632,7 @@ class ConfigurationNSAT(object):
         for p in range(self.N_CORES):
             self.core_cfgs.append(coreConfig(
                 n_states_list[p], n_neurons_list[p], n_inputs_list[p]))
+
 
     def set_ext_events(self, ext_evts_data=None):
         '''
@@ -612,6 +653,7 @@ class ConfigurationNSAT(object):
         if isinstance(self.ext_evts_data, multicoreEvents) is False:
             self.ext_evts_data = multicoreEvents(self.ext_evts_data)
 
+
     def set_groups_core(self, core_cfg, **nsat_parameters):
         '''
         Set parameter group for core
@@ -630,11 +672,13 @@ class ConfigurationNSAT(object):
             print(ps)
             raise RuntimeError()
 
+
     def set_L1_connectivity(self, l1_conn):
         assert type(l1_conn) == dict, "l1_conn must be a dictionary"
         for k, _ in l1_conn.items():
             assert len(k) == 2, "keys must be (src_core, src_neuron)"
         self.L1_connectivity = l1_conn.copy()
+
 
     def set_groups(self):
         '''

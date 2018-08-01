@@ -11,10 +11,11 @@
 import numpy as np
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
+import time
 import os
 
-if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     sim_ticks = 5000        # Simulation time
     N_CORES = 1             # Number of cores
     N_NEURONS = [2]         # Number of neurons per core (list)
@@ -90,13 +91,20 @@ if __name__ == '__main__':
 #                                             prefix='test_adapting')
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+def run(fnames):
     # Call the C NSAT
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    
     print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
@@ -108,4 +116,14 @@ if __name__ == '__main__':
         
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
-    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+    run(filenames)
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))

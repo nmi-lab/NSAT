@@ -14,6 +14,9 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
+import time
+
+sim_ticks = 500                 # Total simulation time
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
@@ -25,12 +28,11 @@ def RegularSpikingStimulus(freqs, ticks=1000):
     return nsat.exportAER(SL)
 
 
-if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     pyST.STCreate.seed(130)         # pyNCSre random number generator
     np.random.seed(30)              # Numpy random number generator
 
-    sim_ticks = 500                 # Total simulation time
     N_CORES = 1                     # Number of cores
     N_NEURONS = [1]                 # Number of neurons per core (list)
     N_INPUTS = [1]                  # Number of inputs per core (list)
@@ -126,17 +128,23 @@ if __name__ == '__main__':
 #                                             prefix='test_eight_states_neuron')
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+def run(fnames):
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
-    out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(fnames.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
@@ -148,4 +156,15 @@ if __name__ == '__main__':
         
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+    
+if __name__ == '__main__':
     print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+    run(filenames)
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+    

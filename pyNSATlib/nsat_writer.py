@@ -16,6 +16,9 @@ from .utils import *
 from .global_vars import *
 from ctypes import Structure, c_char_p
 from pyNCSre import pyST
+import time
+import pyNSATlib
+
 
 FNAME_FIELDS = ['nsat_params_map',
                 'lrn_params_map',
@@ -32,7 +35,8 @@ FNAME_FIELDS = ['nsat_params_map',
                 'stats_nsat',
                 'stats_ext',
                 'l1_conn',
-                'shared_mem']
+                'shared_mem',
+                'pickled']
 
 def pack(data, typ='i'):
     import struct
@@ -70,14 +74,25 @@ class NSATWriter(object):
                         Useful when external events generation is long or
                         imported from another experiment
         '''
+        
+        print('Begin %s:NSATWriter.write()' % (os.path.splitext(os.path.basename(__file__))[0]))
+        start_t = time.perf_counter()
+    
         if not self.cfg.groups_set:
             self.cfg.set_groups()
 
         if write_corecfgs:
-            self.write_corecfgs()
+            self.write_corecfgs(self.fname.params)
 
         if self.cfg.ext_evts:
             self.write_ext_events()
+
+        print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+        start2_t = time.perf_counter()
+        
+        self.cfg.writefileb(self.fname.pickled)
+
+        print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start2_t))
 
         if write_weights:
             self.write_L0connectivity()
@@ -106,6 +121,7 @@ def generate_c_fnames(fname=None):
             setattr(c_fnames, f, getattr(fname, f).encode('utf-8'))
     return c_fnames
 
+
 def generate_default_fnames(path):
     fname = nsat_fnames()
     fname.nsat_params_map = path + "_nsat_params_map.dat"
@@ -124,6 +140,7 @@ def generate_default_fnames(path):
     fname.stats_ext = path + "_stats_ext"
     fname.l1_conn = path + "_l1_conn.dat"
     fname.shared_mem = path + "_shared_mem"
+    fname.pickled = path + '_pickled_config'
     return fname
 
 
@@ -137,14 +154,14 @@ class C_NSATWriter(NSATWriter):
         # Globals are written in write_corecfgs
         pass
 
-    def write_corecfgs(self):
+    def write_corecfgs(self, fname):
         '''
         Write all parameters for c_nsat simulations
         *inputs*: fnames
         *outputs*: None
         '''
         cfg = self.cfg
-        with open(self.fname.params, 'wb') as fh:
+        with open(fname, 'wb') as fh:
             # Global parameters
             fh.write(pack(cfg.N_CORES, 'i'))
             fh.write(pack(cfg.single_core, '?'))
@@ -251,7 +268,7 @@ class C_NSATWriter(NSATWriter):
                     neurons but it's not recommended.
             """
 
-            # nmap = np.zeros((num_neurons, ), dtype='i')
+        # nmap = np.zeros((num_neurons, ), dtype='i')
         with open(self.fname.nsat_params_map, 'wb') as f:
             for p, core_cfg in cfg:
                 f.write(pack(core_cfg.nmap, 'i'))
@@ -399,8 +416,7 @@ def read_from_file(fname):
 
 
 if __name__ == '__main__':
-    from .NSATlib import ConfigurationNSAT, exportAER, build_SpikeList
-    cfg = ConfigurationNSAT(N_CORES=2,
+    cfg = pyNSATlib.ConfigurationNSAT(N_CORES=2,
                             N_INPUTS=[10, 10],
                             N_NEURONS=[512, 100],
                             N_STATES=[4, 2],
@@ -417,9 +433,9 @@ if __name__ == '__main__':
                         cfg.core_cfgs[1].n_inputs:] = 1
     cfg.set_L1_connectivity({(0, 1): ((1, 0), (1, 1))})
 
-    SL1 = build_SpikeList(evs_time=[1, 2, 3], evs_addr=[5, 6, 7])
-    SL2 = build_SpikeList(evs_time=[2, 5, 1], evs_addr=[3, 9, 5])
-    evs = exportAER([SL1, SL2])
+    SL1 = pyNSATlib.build_SpikeList(evs_time=[1, 2, 3], evs_addr=[5, 6, 7])
+    SL2 = pyNSATlib.build_SpikeList(evs_time=[2, 5, 1], evs_addr=[3, 9, 5])
+    evs = pyNSATlib.exportAER([SL1, SL2])
     cfg.set_ext_events(evs)
 
     c_nsat_writer = C_NSATWriter(cfg, path='/tmp/', prefix='test')

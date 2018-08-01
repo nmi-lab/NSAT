@@ -13,6 +13,7 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
+import time
 
 import matplotlib.pylab as plt
 import matplotlib
@@ -23,6 +24,10 @@ matplotlib.rcParams['figure.figsize'] = (8.0, 6.0)
 matplotlib.rcParams['axes.formatter.limits'] = [-10, 10]
 matplotlib.rcParams['figure.subplot.bottom'] = .2
 
+# Globals
+sim_ticks = 1000                # Simulation time
+core = 0 
+SL = None
 
 def SimSpikingStimulus(stim, time=1000, t_sim=None):
     '''
@@ -39,12 +44,12 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
     return SL
 
 
-if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+def setup():
+    global SL
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     
     np.random.seed(100)             # Numpy RNG seed
     pyST.STCreate.seed(130)         # PyNCS RNG seed
-    sim_ticks = 1000                # Simulation time
     N_CORES = 1                     # Number of cores
     N_NEURONS = [100]                 # Number of neurons per core
     N_INPUTS = [101]                  # Number of inputs per core
@@ -72,7 +77,6 @@ if __name__ == '__main__':
                                  plasticity_en=np.array([True], 'bool'),
                                  ben_clock=True)
 
-    core = 0 
     cfg.core_cfgs[core].sigma[0] = [0,0,10,0]
 
     # Transition matrix group 0
@@ -161,13 +165,19 @@ if __name__ == '__main__':
     # Write C NSAT parameters binary file
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_rSTDP')
     c_nsat_writer.write()
+    
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
+
+def run(fnames):
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[core][0], states[core][1]
 
@@ -237,4 +247,15 @@ if __name__ == '__main__':
     
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
-    print('End %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = time.perf_counter()
+    
+    filenames = setup()
+    run(filenames)
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+ 
