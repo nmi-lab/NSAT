@@ -311,6 +311,7 @@ def connect_all2all(weight=0):
         W = np.ones([nsrc, ndst], dtype='int') * weight
         p, w = connections_dense_to_sparse_nonshared(W, CW)
         return p, w
+    return func
 
 def connect_one2one(weight=1):
     def func(src_pop, tgt_pop):

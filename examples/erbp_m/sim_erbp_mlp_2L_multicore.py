@@ -45,10 +45,10 @@ N_CORES = 1
 n_mult = 1
 t_sample_test = 3000
 t_sample_train = 1500
-nepochs = 5
-N_train = 500
-N_test = 100
-test_every = 1
+nepochs = 50
+N_train = 5000
+N_test = 1000
+test_every = 5
 inp_fact = 25
 
 sim_ticks = N_train*t_sample_train

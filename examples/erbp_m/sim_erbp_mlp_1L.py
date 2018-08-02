@@ -6,7 +6,7 @@
 # Author: Emre Neftci
 #
 # Creation Date : 02-20-2018
-# Last Modified : 02-20-2018
+# Last Modified : Thu 12 Jul 2018 09:20:24 AM PDT
 #
 # Copyright : (c) 
 # Licence : GPLv2
@@ -26,8 +26,8 @@ N_FEAT1 = 16
 stride = 2
 ksize = 5
 
-exp_name          = '/tmp/mnist_mlp_1L'
-exp_name_test     = '/tmp/mnist_mlp_1L_test/'
+exp_name          = '/tmp/mnist_mlp_2L'
+exp_name_test     = '/tmp/mnist_mlp_2L_test/'
 
 #Globals
 inputsize = 28
@@ -35,7 +35,6 @@ Nchannel = 1
 Nxy = inputsize*inputsize
 Nv = Nxy*Nchannel
 Nl = 10
-Nconv1 = Nv/stride/stride*N_FEAT1/Nchannel
 Nh = 100
 Np = 10
 Ng2 = Np
@@ -45,10 +44,10 @@ N_CORES = 1
 n_mult = 1
 t_sample_test = 3000
 t_sample_train = 1500
-nepochs = 1
-N_train = 500
-N_test = 100
-test_every = 1
+nepochs = 300
+N_train = 5000
+N_test = 1000
+test_every = 10
 inp_fact = 25
 
 sim_ticks = N_train*t_sample_train
@@ -62,32 +61,39 @@ print("################## Constructing Network Connections #####################
 wpg  = 96
 wgp  = 37    
 
-setup       = NSATSetup(ncores = N_CORES)
+net_graph       = LogicalGraphSetup()
 
-pop_data    = setup.create_external_population(Nv, 0)
-pop_lab     = setup.create_external_population(Nl, 0)
-pop_hid     = setup.create_population(n = Nh, core = 0, neuron_cfg = erf_ntype)
-pop_out     = setup.create_population(n = Nl, core = 0, neuron_cfg = output_ntype)
-pop_err_pos = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype)
-pop_err_neg = setup.create_population(n = Nl, core = 0, neuron_cfg = error_ntype)
+pop_data    = net_graph.create_population(Population(name = 'data   ', n = Nv, core = -1, is_external = True))
+pop_lab     = net_graph.create_population(Population(name = 'lab    ', n = Nl, core = -1, is_external = True))
+pop_hid1    = net_graph.create_population(Population(name = 'hid1   ', n = Nh, core = 0, neuron_cfg = erf_ntype))
+pop_out     = net_graph.create_population(Population(name = 'out    ', n = Nl, core = 0, neuron_cfg = output_ntype))
+pop_err_pos = net_graph.create_population(Population(name = 'err_pos', n = Nl, core = 0, neuron_cfg = error_ntype))
+pop_err_neg = net_graph.create_population(Population(name = 'err_neg', n = Nl, core = 0, neuron_cfg = error_ntype))
 
-Connection(setup, pop_data, pop_hid, 0).connect_random_uniform(low=-16, high=16)
-Connection(setup, pop_hid, pop_out, 0).connect_random_uniform(low=-4, high=4)
+net_graph.create_connection(pop_data, pop_hid1, 0, connect_random_uniform(low=-16, high=16))
+net_graph.create_connection(pop_hid1, pop_out,  0, connect_random_uniform(low=-4, high=4))
 
-#eRBP related connections
-Connection(setup, pop_out, pop_err_pos, 0).connect_one2one(-wpg)
-Connection(setup, pop_out, pop_err_neg, 0).connect_one2one(wpg)
+net_graph.create_connection(pop_out, pop_err_pos, 0, connect_one2one(-wpg))
+net_graph.create_connection(pop_out, pop_err_neg, 0, connect_one2one(wpg))
 
-Connection(setup, pop_lab, pop_err_pos, 0).connect_one2one(wpg)
-Connection(setup, pop_lab, pop_err_neg, 0).connect_one2one(-wpg)
+net_graph.create_connection(pop_lab, pop_err_pos, 0, connect_one2one(wpg))
+net_graph.create_connection(pop_lab, pop_err_neg, 0, connect_one2one(-wpg))
 
-cx_p=Connection(setup, pop_err_pos, pop_hid, 1)
-cx_p.connect_shuffle(3000)
-cx_n=Connection(setup, pop_err_neg, pop_hid, 1)
-cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
+p,w = connect_shuffle(3000)(pop_err_pos, pop_hid1)
 
-Connection(setup, pop_err_pos, pop_out, 1).connect_one2one(wgp)
-Connection(setup, pop_err_neg, pop_out, 1).connect_one2one(-wgp)
+net_graph.create_connection(pop_err_pos, pop_hid1, 1, [p,  w])
+net_graph.create_connection(pop_err_neg, pop_hid1, 1, [p, -w])
+#cx_n=Connection(net_graph, pop_err_neg, pop_hid1, 1)
+#cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
+
+#cx_n=Connection(net_graph, pop_err_neg, pop_hid1, 1)
+#cx_n.connect(cx_p.ptr_table, -cx_p.wgt_table)
+
+
+net_graph.create_connection(pop_err_pos, pop_out, 1, connect_one2one(wgp))
+net_graph.create_connection(pop_err_neg, pop_out, 1, connect_one2one(-wgp))
+
+setup = net_graph.generate_multicore_setup(NSATSetup)
 
 print("################### Constructing NSAT Configuration ##############################")
 #spk_rec_mon = [np.arange(setup.nneurons[0]), np.arange(setup.nneurons[1], dtype='int')]
@@ -95,42 +101,23 @@ spk_rec_mon = [[] for i in range(setup.ncores)]
 spk_rec_mon[pop_out.core] = pop_out.addr
 
 #TODO: fold following in NSATSetup
-cfg_train = nsat.ConfigurationNSAT(
+cfg_train = setup.create_configuration_nsat(
                    sim_ticks = sim_ticks,
-                   N_CORES = setup.ncores,
-                   N_NEURONS= setup.nneurons, 
-                   N_INPUTS = setup.ninputs,
-                   N_STATES = setup.nstates,
-                   bm_rng = True,
-                   w_check = False,
                    spk_rec_mon = spk_rec_mon,
-                   monitor_spikes = [True],
+                   monitor_spikes = True,
+                   w_boundary = 8,
+                   w_check=True,
                    gated_learning = [True],
                    plasticity_en = [True])
-
-# Parameters groups mapping function
-for i in range(setup.ncores):
-    cfg_train.core_cfgs[i] = setup.create_coreconfig(i)
-cfg_train.L1_connectivity = setup.do_L1connections()
 
 spk_rec_mon = [[] for i in range(setup.ncores)]
 spk_rec_mon[pop_out.core] = pop_out.addr
 
-cfg_test = nsat.ConfigurationNSAT(
-                   sim_ticks = sim_ticks_test,
-                   N_CORES = setup.ncores,
-                   N_NEURONS= setup.nneurons, 
-                   N_INPUTS = setup.ninputs,
-                   N_STATES = setup.nstates,
-                   bm_rng = True,
-                   w_check = False,
-                   plasticity_en = [False],
-                   spk_rec_mon = spk_rec_mon,
-                   monitor_spikes = [True])
-
-for i in range(setup.ncores):
-    cfg_test.core_cfgs[i] = copy.copy(cfg_train.core_cfgs[i])
-cfg_test.L1_connectivity = cfg_train.L1_connectivity
+cfg_test = cfg_train.copy()
+cfg_test.sim_ticks = sim_ticks_test
+cfg_test.plasticity_en[:] = False
+cfg_test.spk_rec_mon = spk_rec_mon
+cfg_test.monitor_spikes = True
 
 
 SL_train = create_spike_train(data_train[:N_train], t_sample_train, scaling = inp_fact, with_labels = True)

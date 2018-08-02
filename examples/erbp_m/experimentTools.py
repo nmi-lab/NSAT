@@ -157,14 +157,14 @@ def save_file(filename):
 
 def save(obj=None, filename=None):
     if obj == None and filename == None:
-        with open(globaldata.directory + 'globaldata.pickle', 'w') as f:
+        with open(globaldata.directory + 'globaldata.pickle', 'wb') as f:
             pickle.dump(globaldata, f)
         save_source()
     elif obj == None and filename != None:
-        with open(globaldata.directory + filename, 'w') as f:
+        with open(globaldata.directory + filename, 'wb') as f:
             pickle.dump(globaldata, f)
     else:
-        with open(globaldata.directory + filename, 'w') as f:
+        with open(globaldata.directory + filename, 'wb') as f:
             pickle.dump(obj, f)
     return None
 
