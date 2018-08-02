@@ -1,5 +1,5 @@
 #!/bin/python
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # File Name : laxesis.py
 # Author: Emre Neftci
 #
@@ -8,7 +8,7 @@
 #
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 
 # TODO: BaseConfig comparison may not work as expected - need to compare by contents rather than pointer
@@ -28,11 +28,13 @@ import numpy as np
 import igraph
 
 POPCOUNTER = 0
-CTYPE_LOC =0
-CTYPE_EXT =1
-CTYPE_GLO =2
+CTYPE_LOC = 0
+CTYPE_EXT = 1
+CTYPE_GLO = 2
 
-##Helper Functions
+# Helper Functions
+
+
 def connections_dense_to_sparse_nonshared(W, CW):
     from scipy.sparse import csr_matrix
 
@@ -55,11 +57,14 @@ def connections_dense_to_sparse_shared(ptr_table, wgt_table):
     ptr_table = csr_matrix((data, (rows, cols)), shape=ptr_table.shape)
     return ptr_table, wgt_table
 
-## Base Class
+# Base Class
+
+
 class MulticoreResourceManager(object):
     '''
     A setup class for multicore hardware
     '''
+
     def __init__(self, ncores=1):
         self.ncores = ncores
         self.nneurons = [0 for _ in range(ncores)]
@@ -79,7 +84,6 @@ class MulticoreResourceManager(object):
 
     def create_coreconfig(self, core):
         NotImplementedError('Abstract method, implement')
-
 
     def do_connections(self, core):
         res = []
@@ -118,7 +122,7 @@ class MulticoreResourceManager(object):
         core = pop.core
         neuron_cfg = pop.ntype
         synapse_cfg = pop.ptype
-        name= pop.name
+        name = pop.name
         pop.is_contiguous = True
         if pop.is_external:
             pop.addr = self.assign_external_core(n, core)
@@ -126,8 +130,8 @@ class MulticoreResourceManager(object):
         else:
             pop.addr = self.assign_neurons_core(n, core)
             self.populations[core].append(pop)
-            
-            #TODO, add to nsat_setup
+
+            # TODO, add to nsat_setup
             if neuron_cfg not in self.ntypes[core]:
                 self.ntypes[core][neuron_cfg] = neuron_cfg
                 self.ntypes_order[core].append(neuron_cfg)
@@ -136,17 +140,16 @@ class MulticoreResourceManager(object):
                 if s not in self.ptypes[core]:
                     self.ptypes[core][s] = s
                     self.ptypes_order[core].append(s)
-        
+
         return pop
 
     def add_connection(self, src_pop, tgt_pop, dst_state, connection_function):
         Connection(
-                setup = self,
-                   src_pop = src_pop,
-                   tgt_pop = tgt_pop,
-                   dst_state = dst_state,
-                   connection_function = connection_function)
-        
+            setup=self,
+            src_pop=src_pop,
+            tgt_pop=tgt_pop,
+            dst_state=dst_state,
+            connection_function=connection_function)
 
 
 class Population(object):
@@ -179,7 +182,7 @@ class Population(object):
         """
         global POPCOUNTER
         self.id = POPCOUNTER
-        POPCOUNTER+=1
+        POPCOUNTER += 1
 
         if name is None or name == '':
             self.name = "Pop{0}".format(self.id)
@@ -201,43 +204,41 @@ class Population(object):
 
     def copy(self):
         return Population(
-                name = self.name + '_copy',
-                n = len(self),
-                addr = self.addr,
-                core = self.core,
-                neuron_cfg=self.ntype,
-                synapse_cfg=self.ptype,
-                is_external=self.is_external,
-                is_contiguous=self.is_contiguous)
-
+            name=self.name + '_copy',
+            n=len(self),
+            addr=self.addr,
+            core=self.core,
+            neuron_cfg=self.ntype,
+            synapse_cfg=self.ptype,
+            is_external=self.is_external,
+            is_contiguous=self.is_contiguous)
 
     def gen_ext_copy(self, core_ext):
         return Population(
-                name = self.name + '_ext',
-                n = len(self),
-                addr = None,
-                core = core_ext,
-                neuron_cfg=None,
-                synapse_cfg=[],
-                is_external=True,
-                is_contiguous=False)
+            name=self.name + '_ext',
+            n=len(self),
+            addr=None,
+            core=core_ext,
+            neuron_cfg=None,
+            synapse_cfg=[],
+            is_external=True,
+            is_contiguous=False)
 
     def partition(self, nparts=1):
         pop_list = []
         assert self.n//nparts == int(self.n/parts)
         for i in range(nparts):
-            pop_list.append(Population(name = self.name+'_part{0}'.format(i), 
-                                       n = self.n//nparts,
-                                       neuron_cfg = self.ntype,
-                                       is_external = self.is_external))
+            pop_list.append(Population(name=self.name+'_part{0}'.format(i),
+                                       n=self.n//nparts,
+                                       neuron_cfg=self.ntype,
+                                       is_external=self.is_external))
         return pop_list
 
     def __repr__(self):
         return self.name+"({0},{1})".format(len(self), self.core)
 
 
-
-##Connection function factories
+# Connection function factories
 def loccon2d(imsize=28, ksize=5, stride=2, init=5):
     '''
     Locally connected layer (like conv2d but without sharing)
@@ -312,6 +313,7 @@ def connect_all2all(weight=0):
         p, w = connections_dense_to_sparse_nonshared(W, CW)
         return p, w
 
+
 def connect_one2one(weight=1):
     def func(src_pop, tgt_pop):
         nsrc = len(src_pop)
@@ -322,6 +324,7 @@ def connect_one2one(weight=1):
         p, w = connections_dense_to_sparse_nonshared(W, CW)
         return p, w
     return func
+
 
 def connect_shuffle(iterations=2000):
     def func(src_pop, tgt_pop):
@@ -337,6 +340,7 @@ def connect_shuffle(iterations=2000):
         return p, w
     return func
 
+
 def connect_random_uniform(low, high, prob=1.):
     def func(src_pop, tgt_pop):
         nsrc = len(src_pop)
@@ -351,6 +355,7 @@ def connect_random_uniform(low, high, prob=1.):
         p, w = connections_dense_to_sparse_nonshared(W, CW)
         return p, w
     return func
+
 
 def connect_conv2dbank(imsize, nchannels, nfeatures, stride, ksize, **kwargs):
     '''
@@ -376,6 +381,7 @@ def connect_conv2dbank(imsize, nchannels, nfeatures, stride, ksize, **kwargs):
         return ptr_table, wgt_table
     return func
 
+
 def connect_loccon2dbank(imsize, nchannels, nfeatures, stride, ksize):
     '''
     Consider separating
@@ -390,6 +396,7 @@ def connect_loccon2dbank(imsize, nchannels, nfeatures, stride, ksize):
         p, w = connections_dense_to_sparse_nonshared(W, CW)
         return p, w
     return func
+
 
 class Connection(object):
     '''
@@ -407,13 +414,13 @@ class Connection(object):
         self.src_pop = src_pop
         self.tgt_pop = tgt_pop
         self.dst_state = dst_state
-        self.connection_type = -1 #CONN_TYPE_LOC := 0 is intracore
+        self.connection_type = -1  # CONN_TYPE_LOC := 0 is intracore
         self.cx_func = connection_function
-                                  #CONN_TYPE_LOC := 0 is intracore
-                                  #CONN_TYPE_EXT := 1 is external
-                                  #CONN_TYPE_GLO := 2 is intercore
+        # CONN_TYPE_LOC := 0 is intracore
+        # CONN_TYPE_EXT := 1 is external
+        # CONN_TYPE_GLO := 2 is intercore
         self.__connect(setup)
-                                  
+
     @property
     def src_bgn(self):
         return self.src_pop.addr[0]
@@ -433,7 +440,7 @@ class Connection(object):
     def __repr__(self):
         return "src_pop: {0} -> tgt_pop: {1} :: state {2}".format(self.src_pop, self.tgt_pop, self.dst_state)
 
-    def __connect(self, setup):   
+    def __connect(self, setup):
         if hasattr(self.cx_func, '__call__'):
             ptr_table, wgt_table = self.cx_func(self.src_pop, self.tgt_pop)
         else:
@@ -449,7 +456,7 @@ class Connection(object):
             self.connection_type = CTYPE_GLO
             key = (self.src_pop.core, self.tgt_pop.core)
             # TODO: make only L1 connections that exist
-            #popin = self.setup.create_external_population(len(self.src_pop),
+            # popin = self.setup.create_external_population(len(self.src_pop),
             #                                              self.tgt_pop.core,
             #                                              self.src_pop.name+"_EXT")
             L1 = self.setup.connections_intercore
@@ -466,7 +473,9 @@ class Connection(object):
             setup.connections[self.tgt_pop.core].append(self)
         return ptr_table, wgt_table
 
-## Network Base Class Move to network.py
+# Network Base Class Move to network.py
+
+
 class Graph(igraph.Graph):
     def add_vertex_and_return(self, name=None, **kwds):
         """add_vertex_return(name=None, **kwds)
@@ -504,43 +513,53 @@ class Graph(igraph.Graph):
         pg = self
         layout = pg.layout("kk")
         pg.vs["label"] = pg.vs["name"]
-        igraph.plot(pg, layout = layout, bbox = (1024, 1024), margin = 20).show()
-        
+        igraph.plot(pg, layout=layout, bbox=(1024, 1024), margin=20).show()
+
+
 class LogicalGraphSetup(object):
     '''
-    A class for creating the network graph. Currently the main gateway into creating neural networks with NSAT with automatic resource allocation and core-level distribution
+    A class for creating the network graph. Currently the main gateway into
+    creating neural networks with NSAT with automatic resource allocation and
+    core-level distribution
     '''
+
     def __init__(self):
-        #logical graph
-        self.g = Graph(directed= True, vertex_attrs = {'core':-1,'name':'','id':-1,'data':{}}, edge_attrs = {'core_tgt':-1, 'name':'', 'core_src':-1, 'cx':None, 'ctype':-1})
+        # logical graph
+        self.g = Graph(directed=True,
+                       vertex_attrs={'core': -1,
+                                     'name': '',
+                                     'id': -1,
+                                     'data': {}},
+                       edge_attrs={'core_tgt': -1,
+                                   'name': '',
+                                   'core_src': -1,
+                                   'cx': None,
+                                   'ctype': -1})
 
-        #placement graph
-        #self.pg = Graph(directed= True, vertex_attrs = {'core':-1,'name':'','node_list':{}})
-
+        # placement graph
 
     def create_population(self, pop):
-        if isinstance(pop,Population):
+        if isinstance(pop, Population):
             self.__create_node(
-                    name = pop.name,
-                    core = pop.core,
-                    is_external = pop.is_external,
-                    id = pop.id,
-                    data = pop)
+                name=pop.name,
+                core=pop.core,
+                is_external=pop.is_external,
+                id=pop.id,
+                data=pop)
         else:
             for p in pop:
                 self.__create_node(
-                        name = p.name,
-                        core = p.core,
-                        is_external = p.is_external,
-                        id = p.id,
-                        data = p)
+                    name=p.name,
+                    core=p.core,
+                    is_external=p.is_external,
+                    id=p.id,
+                    data=p)
 
         return pop
 
-
-    def create_connection(self, src, tgt, dst_state, cx = connect_all2all()):
+    def create_connection(self, src, tgt, dst_state, cx=connect_all2all()):
         if isinstance(src, Population):
-            src = [src] 
+            src = [src]
         if isinstance(tgt, Population):
             tgt = [tgt]
 
@@ -549,37 +568,41 @@ class LogicalGraphSetup(object):
             for tgt_ in tgt:
                 src_v = self.g.vs.find(id=src_.id)
                 tgt_v = self.g.vs.find(id=tgt_.id)
-                v.append(self.__create_edge(src_v, tgt_v, core_src = src_.core, core_tgt = tgt_.core, cx = cx, dst_state= dst_state))
+                v.append(self.__create_edge(src_v, tgt_v, core_src=src_.core,
+                                            core_tgt=tgt_.core, cx=cx,
+                                            dst_state=dst_state))
 
         return v
 
-    def __create_node(self, name = '', **data):
+    def __create_node(self, name='', **data):
         core = data['core']
         pop_vertex = self.g.add_vertex_and_return(name, **data)
         #core_vertices = self.pg.vs.select(core=core)
-        #if len(core_vertices)==0:
+        # if len(core_vertices)==0:
         #    print('Adding core {0}'.format(core))
         #    self.pg.add_vertex(name=pop_vertex['core'], core=core, node_list = {pop_vertex:pop_vertex.index})
-        #elif len(core_vertices)==1:
+        # elif len(core_vertices)==1:
         #    pop_list = core_vertices[0]['node_list']
         #    pop_list[pop_vertex] = pop_vertex.index
         #    core_vertices[0].update_attributes({'node_list':pop_list})
-        #else:
+        # else:
         #    raise ValueError('Placement graph has more than one node for core {0}'.format(core))
 
     def __create_edge(self, src, tgt, dst_state, **data):
         ctype = -1
-        e = self.g.add_edge_and_return(src, tgt, dst_state = dst_state, ctype = ctype, **data)
+        e = self.g.add_edge_and_return(
+            src, tgt, dst_state=dst_state, ctype=ctype, **data)
         #src_core = src['core']
         #tgt_core = tgt['core']
-        #self.pg.add_edge(src_core,
+        # self.pg.add_edge(src_core,
         #                 tgt_core,
         #                 src_pop = src,
         #                 tgt_pop = tgt,
         #                 edge = e)
-        
+
     def generate_core_assigned_graph(self):
-        physical_graph = Graph(directed= True, vertex_attrs = {'core':-1,'name':'','id':-1,'data':{}})
+        physical_graph = Graph(directed=True, vertex_attrs={
+                               'core': -1, 'name': '', 'id': -1, 'data': {}})
         for src_v in self.g.vs:
             physical_graph.add_vertex_and_return(**src_v.attributes())
 
@@ -587,57 +610,59 @@ class LogicalGraphSetup(object):
             src_v_out = self.g.es.select(_source=src_v.index)
             for core in np.unique(src_v_out['core_tgt']).astype('int'):
                 es = src_v_out.select(core_tgt=core)
-                if core == src_v['core']: 
+                if core == src_v['core']:
                     for ee in es:
                         tgt_v = physical_graph.vs.find(ee.target)
-                        new_local_edge = physical_graph.add_edge_and_return(src_v, tgt_v, **ee.attributes())
-                        new_local_edge.update_attributes({'ctype':0})
-                else: 
-                    if len(es)>0:
+                        new_local_edge = physical_graph.add_edge_and_return(
+                            src_v, tgt_v, **ee.attributes())
+                        new_local_edge.update_attributes({'ctype': 0})
+                else:
+                    if len(es) > 0:
                         pop_ext = src_v['data'].gen_ext_copy(core)
-                        ext_v = physical_graph.add_vertex_and_return(name = src_v['name']+'_ext_core{0}'.format(core), id = pop_ext.id, is_external = True, data = pop_ext, core=core)
+                        ext_v = physical_graph.add_vertex_and_return(name=src_v['name']+'_ext_core{0}'.format(
+                            core), id=pop_ext.id, is_external=True, data=pop_ext, core=core)
                         print(ext_v['name'])
-                        new_intercore_edge = physical_graph.add_edge_and_return(src_v, ext_v, core_src = src_v['core'], core_tgt = core, cx=connect_one2one(), ctype=2)
-                        new_intercore_edge.update_attributes({'ctype':2})
+                        new_intercore_edge = physical_graph.add_edge_and_return(
+                            src_v, ext_v, core_src=src_v['core'], core_tgt=core, cx=connect_one2one(), ctype=2)
+                        new_intercore_edge.update_attributes({'ctype': 2})
                         for ee in es:
                             tgt_v = physical_graph.vs.find(ee.target)
-                            new_ext_edge = physical_graph.add_edge_and_return(ext_v, tgt_v, **ee.attributes())
-                            new_ext_edge.update_attributes({'ctype':1})
+                            new_ext_edge = physical_graph.add_edge_and_return(
+                                ext_v, tgt_v, **ee.attributes())
+                            new_ext_edge.update_attributes({'ctype': 1})
 
         return physical_graph
 
-    def generate_multicore_setup(self, setup_type = MulticoreResourceManager):
+    def generate_multicore_setup(self, setup_type=MulticoreResourceManager):
         graph = self.generate_core_assigned_graph()
         cores = np.unique(graph.vs['core'])
         ncores = np.max(cores)+1
         mc_setup = setup_type(ncores=ncores)
         for v in graph.vs:
-            #TODO: ext pop workaround
-            if v['core']!=-1:
-                mc_setup.add_population(v['data']) 
+            # TODO: ext pop workaround
+            if v['core'] != -1:
+                mc_setup.add_population(v['data'])
 
         for ee in graph.es:
             src_v = graph.vs.find(ee.source)
-            #TODO: ext pop workaround
+            # TODO: ext pop workaround
             if src_v['core'] != -1:
                 tgt_v = graph.vs.find(ee.target)
                 mc_setup.add_connection(
-                        src_pop = src_v['data'],
-                        tgt_pop = tgt_v['data'],
-                        dst_state = ee['dst_state'],
-                        connection_function = ee['cx']) 
+                    src_pop=src_v['data'],
+                    tgt_pop=tgt_v['data'],
+                    dst_state=ee['dst_state'],
+                    connection_function=ee['cx'])
         return mc_setup
-
-
 
 
 if __name__ == "__main__":
     # test population creatin and assignment
     setup = LogicalGraphSetup()
     inp1 = Population(n=20,
-                      core = -1,
-                      is_external = True,
-                      name = 'inp0')
+                      core=-1,
+                      is_external=True,
+                      name='inp0')
     pop1 = Population(n=20,
                       core=0,
                       neuron_cfg=None)
@@ -645,8 +670,8 @@ if __name__ == "__main__":
                       core=1,
                       neuron_cfg=None)
     pop3 = Population(n=20,
-                        core=1,
-                        neuron_cfg=None)
+                      core=1,
+                      neuron_cfg=None)
 
     c1 = connect_one2one(5)
 
@@ -654,19 +679,19 @@ if __name__ == "__main__":
     setup.create_population(pop1)
     setup.create_population(pop2)
     setup.create_population(pop3)
-    setup.create_connection(inp1, pop1, dst_state = 1, cx = c1)
-    setup.create_connection(pop1, pop2, dst_state = 1, cx = c1)
-    setup.create_connection(pop1, pop1, dst_state = 1, cx = c1)
-    setup.create_connection(pop1, pop3, dst_state = 1, cx = c1)
+    setup.create_connection(inp1, pop1, dst_state=1, cx=c1)
+    setup.create_connection(pop1, pop2, dst_state=1, cx=c1)
+    setup.create_connection(pop1, pop1, dst_state=1, cx=c1)
+    setup.create_connection(pop1, pop3, dst_state=1, cx=c1)
 
     nsat_setup = setup.generate_multicore_setup()
-
 
 
 class NSATSetup(MulticoreResourceManager):
     '''
     A class for NSAT Resource Management
     '''
+
     def normalize_n_states(self, core):
         '''
         Expands ntypes and ptypes if necessary
@@ -723,20 +748,19 @@ class NSATSetup(MulticoreResourceManager):
         return core_cfg
 
     def create_configuration_nsat(setup, sim_ticks, **kwargs):
-        #TODO: fold following in NSATSetup
+        # TODO: fold following in NSATSetup
         cfg = ConfigurationNSAT(
-                   sim_ticks = sim_ticks,
-                   N_CORES = setup.ncores,
-                   N_NEURONS= setup.nneurons, 
-                   N_INPUTS = setup.ninputs,
-                   N_STATES = setup.nstates,
-                   bm_rng = True,
-                   **kwargs)
+            sim_ticks=sim_ticks,
+            N_CORES=setup.ncores,
+            N_NEURONS=setup.nneurons,
+            N_INPUTS=setup.ninputs,
+            N_STATES=setup.nstates,
+            bm_rng=True,
+            **kwargs)
         for i in range(setup.ncores):
             cfg.core_cfgs[i] = setup.create_coreconfig(i)
         cfg.L1_connectivity = setup.do_L1connections()
         return cfg
-
 
     def do_L1connections(self):
         L1Connections = {}
@@ -744,7 +768,7 @@ class NSATSetup(MulticoreResourceManager):
             src_core_id = k[0]
             dst_core_id = k[1]
             vv = v.copy()
-            #src_neuron_id
+            # src_neuron_id
             vv[0, :] += self.ninputs[src_core_id]
             # print(self.ninputs[k[0]])
             for i in range(len(v[0, :])):
@@ -807,7 +831,6 @@ class NSATSetup(MulticoreResourceManager):
         return ptr_table, wgt_table
 
 
-
 if __name__ == "__main__":
     modSTDP_ptype = plasticityConfig('modSTDP')
     mod2STDP_ptype = plasticityConfig('mod2STDP')
@@ -821,9 +844,9 @@ if __name__ == "__main__":
     # test population creatin and assignment
     net_graph = LogicalGraphSetup()
     inp1 = Population(n=20,
-                      core = -1,
-                      is_external = True,
-                      name = 'inp0')
+                      core=-1,
+                      is_external=True,
+                      name='inp0')
     pop1 = Population(n=20,
                       core=0,
                       neuron_cfg=neurone_ntype)
@@ -831,8 +854,8 @@ if __name__ == "__main__":
                       core=1,
                       neuron_cfg=neurone_ntype)
     pop3 = Population(n=20,
-                        core=1,
-                        neuron_cfg=neurone_ntype)
+                      core=1,
+                      neuron_cfg=neurone_ntype)
 
     c1 = connect_one2one(5)
 
@@ -840,16 +863,16 @@ if __name__ == "__main__":
     net_graph.create_population(pop1)
     net_graph.create_population(pop2)
     net_graph.create_population(pop3)
-    net_graph.create_connection(inp1, pop1, dst_state = 1, cx = c1)
-    net_graph.create_connection(pop1, pop2, dst_state = 1, cx = c1)
-    net_graph.create_connection(pop1, pop1, dst_state = 1, cx = c1)
-    net_graph.create_connection(pop1, pop3, dst_state = 1, cx = c1)
+    net_graph.create_connection(inp1, pop1, dst_state=1, cx=c1)
+    net_graph.create_connection(pop1, pop2, dst_state=1, cx=c1)
+    net_graph.create_connection(pop1, pop1, dst_state=1, cx=c1)
+    net_graph.create_connection(pop1, pop3, dst_state=1, cx=c1)
 
     pg = net_graph.generate_core_assigned_graph()
 
     layout = pg.layout("kk")
     pg.vs["label"] = pg.vs["name"]
-    igraph.plot(pg, layout = layout, bbox = (300, 300), margin = 20).show()
+    igraph.plot(pg, layout=layout, bbox=(300, 300), margin=20).show()
 
     setup = net_graph.generate_multicore_setup(NSATSetup)
     core_cef = setup.create_coreconfig(0)
