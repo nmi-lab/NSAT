@@ -17,7 +17,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **************************************************************************/
 #include "nsat.h"
-
+#include "barrier.h"
 
 extern inline void over_under_flow(nsat_core *core);
 
@@ -29,8 +29,7 @@ extern inline void copy_states(unit **dest,
 extern inline void progress_bar(int x, int n);
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-pthread_spinlock_t slock; 
-pthread_barrier_t barrier;
+_pthread_barrier_t barrier;
 route_list_ *shared_ = NULL;
 
 /* ************************************************************************
@@ -529,7 +528,6 @@ void spike_events(STATETYPE *x,
                     if (nsat_neuron[j].is_transmitter) {
                         array_list_push(&trans_events, j, curr_time, 1);
 
-                        // pthread_spin_lock(&slock);
                         pthread_mutex_lock(&lock);
                         for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
                             dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
@@ -538,7 +536,6 @@ void spike_events(STATETYPE *x,
                                             dst_nrnn, 0, 0);
                         }
                         pthread_mutex_unlock(&lock);
-                        // pthread_spin_unlock(&slock);
                     }
 
                     if (nsat_neuron[j].is_spk_rec_on) {
@@ -554,7 +551,6 @@ void spike_events(STATETYPE *x,
                     if (nsat_neuron[j].is_transmitter) {
                         array_list_push(&trans_events, j, curr_time, 1);
                         
-                        // pthread_spin_lock(&slock);
                         pthread_mutex_lock(&lock);
                         for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
                             dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
@@ -563,7 +559,6 @@ void spike_events(STATETYPE *x,
                                             dst_nrnn, 0, 0);
                         }
                         pthread_mutex_unlock(&lock);
-                        // pthread_spin_unlock(&slock);
                     }
 
                     if (nsat_neuron[j].is_spk_rec_on) {
@@ -984,7 +979,6 @@ void *nsat_thread(void *args)
 
     nsat_core *core = (nsat_core *)args;
     clock_t t_s, t_f;
-    int id;
     FILE *fext;
 
     if (core->core_pms.is_ext_evts_on) {
@@ -1004,7 +998,7 @@ void *nsat_thread(void *args)
         core->curr_time = t;
         nsat_dynamics((void *)&core[0]);
 
-        pthread_barrier_wait(&barrier);
+        _pthread_barrier_wait(&barrier);
 
         if (core->g_pms->is_routing_on) {
             pthread_mutex_lock(&lock);
@@ -1015,7 +1009,7 @@ void *nsat_thread(void *args)
             pthread_mutex_unlock(&lock);
         }
 
-        pthread_barrier_wait(&barrier);
+        _pthread_barrier_wait(&barrier);
 
         nsat_events_and_learning((void *)&core[0]);
     }
@@ -1104,8 +1098,7 @@ int iterate_nsat(fnames *fname) {
     /* Initialize all threads variables */
     cores_t = alloc(pthread_t, g_pms.num_cores);
     pthread_mutex_init(&lock, NULL);
-    // pthread_spin_init(&slock, PTHREAD_PROCESS_SHARED);
-    pthread_barrier_init(&barrier, NULL, g_pms.num_cores);
+    _pthread_barrier_init(&barrier, NULL, g_pms.num_cores);
 
     /* Check if clock is on */
     t0 = clock();
@@ -1128,8 +1121,7 @@ int iterate_nsat(fnames *fname) {
     }
 
     pthread_mutex_destroy(&lock);
-    // pthread_spin_destroy(&slock);
-    pthread_barrier_destroy(&barrier);
+    _pthread_barrier_destroy(&barrier);
 
     /* Write spikes events */
     write_spikes_events(fname, cores, g_pms.num_cores);

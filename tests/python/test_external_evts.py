@@ -137,18 +137,11 @@ if __name__ == '__main__':
     cfg.set_ext_events(ext_evts_data)
 
     # Generate all the CNSAT parameters files
-    c_nsat_writer = nsat.C_NSATWriterMultithread(cfg, path='/tmp',
+    c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',
                                       prefix='test_external_evts')
     c_nsat_writer.write()
 
-    # Write Intel FPGA parameters hex files
-#    intel_fpga_writer = nsat.IntelFPGAWriter(cfg, path='.',
-#                                             prefix='test_external_evts')
-#    intel_fpga_writer.write()
-#    intel_fpga_writer.write_globals()
-
     # Call the C NSAT
-    raise
     print("Running C NSAT!")
     nsat.run_c_nsat(c_nsat_writer.fname)
 

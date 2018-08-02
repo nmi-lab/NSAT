@@ -14,8 +14,8 @@ def read_from_file_weights(fname):
     import struct as st
     with open(fname, "rb") as f:
         cont = f.read()
-    size = int(len(cont) / 32)
-    return np.array(st.unpack('QQQIi' * size, cont))
+    size = int(len(cont) // 4)
+    return np.array(st.unpack('i' * size, cont))
 
 
 def read_synaptic_weights(core_cfg, wgt_file, ptr_file, return_cw=False):
@@ -35,6 +35,7 @@ class NSATReader(object):
     def __init__(self, config_nsat, fname):
         self.cfg = config_nsat
         self.fname = fname
+
 
 class C_NSATReader(NSATReader):
 
@@ -71,7 +72,7 @@ class C_NSATReader(NSATReader):
         '''
         return self.read_synaptic_weights_history(*args, **kwargs)
 
-    def read_synaptic_weights_history(self, post=None):
+    def read_synaptic_weights_history(self, post=[]):
         '''
         Read weights monitored using monitor_weights=True.
         Inputs:
@@ -79,20 +80,25 @@ class C_NSATReader(NSATReader):
         Outputs:
         A list of numpy arrays of shape (timesteps, pre-neuron id (including input neurons), state). Each item in the list corresponds to a core
         '''
-        W_all = []
+        W_all, Pre_ids_all = [], []
         for p, core_cfg in self.cfg:
             n_units = core_cfg.n_inputs + core_cfg.n_neurons
-            ww = read_from_file_weights(self.fname.synw + '_core_' + str(p) + '.dat')
+            ww = read_from_file_weights(
+                self.fname.synw + '_core_' + str(p) + '.dat')
             # len_ww = ww.shape[0]
             W = np.zeros((self.cfg.sim_ticks, n_units,
-                          core_cfg.n_states), 'int')
+                          core_cfg.n_states), 'i')
+            if len(post) != 0:
+                pre_ids = []
             for i in range(len(ww)):
                 if len(ww[i * 5:i * 5 + 5]) != 0:
                     time, pre, post_, state, val = ww[i * 5:i * 5 + 5]
-                    if post_ == post:
+                    if post_ in post:
                         W[time, pre, state] = val
+                        pre_ids.append(pre)
             W_all.append(W[1:, ...])
-        return W_all
+            Pre_ids_all.append(pre_ids)
+        return W_all, Pre_ids_all
 
     def read_c_nsat_states(self, *args, **kwargs):
         return self.read_states(*args, **kwargs)
@@ -101,7 +107,8 @@ class C_NSATReader(NSATReader):
         S = []
         for p, core_cfg in self.cfg:
             size = len(self.cfg.spk_rec_mon[p]) * core_cfg.n_states + 1
-            tmp = read_from_file(self.fname.states + '_core_' + str(p) + '.dat')
+            tmp = read_from_file(self.fname.states +
+                                 '_core_' + str(p) + '.dat')
             res = np.zeros((self.cfg.sim_ticks, len(self.cfg.spk_rec_mon[p]),
                             core_cfg.n_states + 1), 'int')
             for i in range(self.cfg.sim_ticks - 1):
@@ -126,7 +133,8 @@ class C_NSATReader(NSATReader):
     def read_c_nsat_states_list(self):
         T, S = [], []
         for p, core_cfg in self.cfg:
-            tmp = read_from_file(self.fname.states + '_core_' + str(p) + '.dat')
+            tmp = read_from_file(self.fname.states +
+                                 '_core_' + str(p) + '.dat')
             stride = len(self.cfg.spk_rec_mon[p]) * 4 + 1
             size = self.cfg.sim_ticks // self.cfg.rec_deltat
             tmp = tmp.reshape(size, stride)
@@ -143,7 +151,8 @@ class C_NSATReader(NSATReader):
         if id_list is None:
             id_list = self.cfg.spk_rec_mon[core]
         filename = self.fname.events + '_core_{0}.dat'.format(core)
-        spikelist = importAER(self.read_events(core),sim_ticks=sim_ticks, id_list=id_list)
+        spikelist = importAER(self.read_events(
+            core), sim_ticks=sim_ticks, id_list=id_list)
         return spikelist
 
     def read_c_nsat_synaptic_weights(self):
@@ -153,8 +162,10 @@ class C_NSATReader(NSATReader):
         ptr_tables = []
         pos = 0
         for p, core_cfg in self.cfg:
-            ptrs = read_from_file(self.fname.synw_final + ('_core_' + str(p) + '.dat'))
-            shared_mem = read_from_file(self.fname.shared_mem + ('_core_' + str(p) + '.dat'))
+            ptrs = read_from_file(self.fname.synw_final +
+                                  ('_core_' + str(p) + '.dat'))
+            shared_mem = read_from_file(
+                self.fname.shared_mem + ('_core_' + str(p) + '.dat'))
             n_units = core_cfg.n_inputs + core_cfg.n_neurons
             n_states = core_cfg.n_states
             nentries = (ptrs[pos]) * 4

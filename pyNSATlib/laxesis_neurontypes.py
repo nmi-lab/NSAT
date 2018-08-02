@@ -1,5 +1,5 @@
 #!/bin/python
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # File Name : laxesis_neurontypes.py
 # Author: Emre Neftci
 #
@@ -8,7 +8,7 @@
 #
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 import numpy as np
 
 XMAX = MAX = 2**15 - 1
@@ -181,11 +181,12 @@ class plasticityConfig(BaseCoreConfig):
 
         return cfg
 
-#==========
+
+# ==========
 nonplastic_ptype = plasticityConfig(name='NoPlasticity')
 nonplastic_ptype.plastic = False
 
-#==========
+# ==========
 erbp_ptype = plasticityConfig(name='eRBP')
 erbp_ptype.tstdp = 1000
 erbp_ptype.plastic = True
@@ -201,18 +202,18 @@ erbp_ptype.tac = np.array([-16, -36], 'int')
 erbp_ptype.siac = np.array([-1, -1, -1], 'int')
 erbp_ptype.slac = np.array([16, 16, 16], 'int')
 
-#==========
+# ==========
 erbp_ptype_hiRR = erbp_ptype.copy()
 erbp_ptype_hiRR.rr_num_bits = 12
 erbp_ptype_hiRR.name += '_hiRR'
 
-#==========
+# ==========
 erbp_ptype_loRR = erbp_ptype.copy()
 erbp_ptype_loRR.rr_num_bits = 11
 erbp_ptype_loRR.name += '_loRR'
 
-#==========
-#==========
+# ==========
+# ==========
 erf_ntype = neuronConfig(2, [erbp_ptype, nonplastic_ptype], name='erfneuron')
 erf_ntype.t_ref = 39
 erf_ntype.prob_syn[0] = 9
