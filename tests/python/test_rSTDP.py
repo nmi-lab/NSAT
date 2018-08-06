@@ -74,6 +74,7 @@ def setup():
                                  monitor_states=True,
                                  monitor_spikes=True,
                                  monitor_weights=True,
+                                 w_check=False,
                                  plasticity_en=np.array([True], 'bool'),
                                  ben_clock=True)
 

@@ -23,7 +23,7 @@
 
 /* For brief description of these functions see nsat_checks.c file */
 
-inline bool is_power_of_two(int x) {
+static inline bool is_power_of_two(int x) {
     return x && !(x & (x - 1));
 
 }

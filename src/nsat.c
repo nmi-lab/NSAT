@@ -17,13 +17,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  **************************************************************************/
 #include <sys/socket.h>
-// #define __USE_POSIX /* struct addrinfo */
-// #include <netdb.h>
-// #define __USE_XOPEN2K /* pthread_rwlock_t & pthread_barrier_t */
-// #define __USE_XOPEN_EXTENDED /* siginfo_t */
-
 #include "nsat.h"
-#include "osx_pthreads.h"
+#include "barrier.h"
 
 extern inline void over_under_flow(nsat_core *core);
 
@@ -35,8 +30,8 @@ extern inline void copy_states(unit **dest,
 extern inline void progress_bar(int x, int n);
 
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
-//pthread_spinlock_t slock; 
-pthread_barrier_t barrier;
+
+_pthread_barrier_t barrier;
 route_list_ *shared_ = NULL;
 
 /* ************************************************************************
@@ -522,63 +517,60 @@ void spike_events(STATETYPE *x,
                   int num_states,
                   int core_id)
 {
-  int j;
-  int dst_core, dst_nrnn;
+    int j;
+    int dst_core, dst_nrnn;
 
-  for (j = 0; j < num_neurons; ++j) {
-    /* Check for spike - fixed threshold value*/
-    if (nsat_neuron[j].ref_period == 0) {
-      if (nsat_neuron[j].nsat_ptr->is_flag_Xth == false) {
-	if (x[j*num_states] >= nsat_neuron[j].nsat_ptr->x_thr) {
-	  array_list_push(&nsat_events, j, curr_time, 1);
-	  nsat_neuron[j].spk_counter++;
-	  if (nsat_neuron[j].is_transmitter) {
-	    array_list_push(&trans_events, j, curr_time, 1);
+    for (j = 0; j < num_neurons; ++j) {
+        /* Check for spike - fixed threshold value*/
+        if (nsat_neuron[j].ref_period == 0) {
+            if (nsat_neuron[j].nsat_ptr->is_flag_Xth == false) {
+                if (x[j*num_states] >= nsat_neuron[j].nsat_ptr->x_thr) {
+                    array_list_push(&nsat_events, j, curr_time, 1);
+                    nsat_neuron[j].spk_counter++;
+                    if (nsat_neuron[j].is_transmitter) {
+                        array_list_push(&trans_events, j, curr_time, 1);
 
-	    // pthread_spin_lock(&slock);
-	    pthread_mutex_lock(&lock);
-	    for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
-	      dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
-	      dst_nrnn = nsat_neuron[j].ptr_cores[q].dst_neuron_id;
-	      array_list_push(&shared_[dst_core].units,
-			      dst_nrnn, 0, 0);
-	    }
-	    pthread_mutex_unlock(&lock);
-	    // pthread_spin_unlock(&slock);
-	  }
+                        pthread_mutex_lock(&lock);
+                        for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
+                            dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
+                            dst_nrnn = nsat_neuron[j].ptr_cores[q].dst_neuron_id;
+                            array_list_push(&shared_[dst_core].units,
+                                            dst_nrnn, 0, 0);
+                        }
+                        pthread_mutex_unlock(&lock);
+                    }
 
-	  if (nsat_neuron[j].is_spk_rec_on) {
-	    array_list_push(&events, j, curr_time, 1);
-	    array_list_push(&mon_events, j, curr_time, 1);
-	  }
-	  nsat_neuron[j].ref_period = nsat_neuron[j].nsat_ptr->t_ref;
-	}
-      } else {
-	if (x[j*num_states] >= x[j*num_states+1]) {
-	  array_list_push(&nsat_events, j, curr_time, 1);
-	  nsat_neuron[j].spk_counter++;
-	  if (nsat_neuron[j].is_transmitter) {
-	    array_list_push(&trans_events, j, curr_time, 1);
+                    if (nsat_neuron[j].is_spk_rec_on) {
+                        array_list_push(&events, j, curr_time, 1);
+                        array_list_push(&mon_events, j, curr_time, 1);
+                    }
+                    nsat_neuron[j].ref_period = nsat_neuron[j].nsat_ptr->t_ref;
+                }
+            } else {
+                if (x[j*num_states] >= x[j*num_states+1]) {
+                    array_list_push(&nsat_events, j, curr_time, 1);
+                    nsat_neuron[j].spk_counter++;
+                    if (nsat_neuron[j].is_transmitter) {
+                        array_list_push(&trans_events, j, curr_time, 1);
                         
-	    // pthread_spin_lock(&slock);
-	    pthread_mutex_lock(&lock);
-	    for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
-	      dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
-	      dst_nrnn = nsat_neuron[j].ptr_cores[q].dst_neuron_id;
-	      array_list_push(&shared_[dst_core].units,
-			      dst_nrnn, 0, 0);
-	    }
-	    pthread_mutex_unlock(&lock);
-	    // pthread_spin_unlock(&slock);
-	  }
+                        pthread_mutex_lock(&lock);
+                        for (int q = 0; q < nsat_neuron[j].router_size; ++q) {
+                            dst_core = nsat_neuron[j].ptr_cores[q].dst_core_id;
+                            dst_nrnn = nsat_neuron[j].ptr_cores[q].dst_neuron_id;
+                            array_list_push(&shared_[dst_core].units,
+                                            dst_nrnn, 0, 0);
+                        }
+                        pthread_mutex_unlock(&lock);
+                    }
 
-	  if (nsat_neuron[j].is_spk_rec_on) {
-	    array_list_push(&events, j, curr_time, 1);
-	    array_list_push(&mon_events, j, curr_time, 1);
-	  }
-	  nsat_neuron[j].ref_period = nsat_neuron[j].nsat_ptr->t_ref;
-	}
-      }
+                    if (nsat_neuron[j].is_spk_rec_on) {
+                        array_list_push(&events, j, curr_time, 1);
+                        array_list_push(&mon_events, j, curr_time, 1);
+                    }
+                    nsat_neuron[j].ref_period = nsat_neuron[j].nsat_ptr->t_ref;
+                }
+            }
+        }
     }
   }
 }
@@ -986,20 +978,11 @@ void nsat_events_and_learning(nsat_core *core) {
 
 void *nsat_thread(void *args)
 {
-  int t, q;
+    int t, q;
 
-  nsat_core *core = (nsat_core *)args;
-  clock_t t_s, t_f;
-  int id;
-  FILE *fext;
-
-  if (core->core_pms.is_ext_evts_on) {
-    fext = fopen(core->ext_evts_fname, "rb");
-    if (!fext) {
-      printf(ANSI_COLOR_YELLOW "WARNING:  " ANSI_COLOR_RESET);
-      printf("No external events file for Core %u !\n", core->core_id);
-    }
-  }
+    nsat_core *core = (nsat_core *)args;
+    clock_t t_s, t_f;
+    FILE *fext;
 
   t_s = clock();
   for (t = 1; t < core->g_pms->ticks; ++t) {
@@ -1010,18 +993,18 @@ void *nsat_thread(void *args)
     core->curr_time = t;
     nsat_dynamics((void *)&core[0]);
 
-    pthread_barrier_wait(&barrier);
+        _pthread_barrier_wait(&barrier);
 
-    if (core->g_pms->is_routing_on) {
-      pthread_mutex_lock(&lock);
-      for (q = 0 ; q < shared_[core->core_id].units->length; ++q) {
-	array_list_push(&core->ext_events,
-			shared_[core->core_id].units->array[q], t, 1);
-      }
-      pthread_mutex_unlock(&lock);
-    }
+        if (core->g_pms->is_routing_on) {
+            pthread_mutex_lock(&lock);
+            for (q = 0 ; q < shared_[core->core_id].units->length; ++q) {
+                array_list_push(&core->ext_events,
+                                shared_[core->core_id].units->array[q], t, 1);
+            }
+            pthread_mutex_unlock(&lock);
+        }
 
-    pthread_barrier_wait(&barrier);
+        _pthread_barrier_wait(&barrier);
 
     nsat_events_and_learning((void *)&core[0]);
   }
@@ -1107,63 +1090,61 @@ int iterate_nsat(fnames *fname) {
 
   /* Open all necessary monitor files */
   open_cores_monitor_files(cores, fname, g_pms.num_cores);
-    
-  /* Initialize all threads variables */
-  cores_t = alloc(pthread_t, g_pms.num_cores);
-  pthread_mutex_init(&lock, NULL);
-  // pthread_spin_init(&slock, PTHREAD_PROCESS_SHARED);
-  pthread_barrier_init(&barrier, NULL, g_pms.num_cores);
 
-  /* Check if clock is on */
-  t0 = clock();
+    /* Initialize all threads variables */
+    cores_t = alloc(pthread_t, g_pms.num_cores);
+    pthread_mutex_init(&lock, NULL);
+    _pthread_barrier_init(&barrier, NULL, g_pms.num_cores);
 
-  /* Create and run threads (NSAT Cores) */
-  for (p = 0; p < g_pms.num_cores; ++p) {
-    pthread_create(&cores_t[p], NULL, nsat_thread, (void *)&cores[p]);
-  }
+    /* Check if clock is on */
+    t0 = clock();
 
-  /* Join threads */
-  for (p = 0; p < g_pms.num_cores; ++p) {
-    pthread_join(cores_t[p], NULL);
-  }
+    /* Create and run threads (NSAT Cores) */
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        pthread_create(&cores_t[p], NULL, nsat_thread, (void *)&cores[p]);
+    }
 
-  /* If clock is turned on then print out the execution time */
-  tf = clock();
-  if (g_pms.is_clock_on) {
-    printf("Simulation execution time: %lf seconds\n",
-	   (double) (tf - t0) / CLOCKS_PER_SEC);
-  }
+    /* Join threads */
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        pthread_join(cores_t[p], NULL);
+    }
 
-  pthread_mutex_destroy(&lock);
-  // pthread_spin_destroy(&slock);
-  pthread_barrier_destroy(&barrier);
+    /* If clock is turned on then print out the execution time */
+    tf = clock();
+    if (g_pms.is_clock_on) {
+        printf("Simulation execution time: %lf seconds\n",
+               (double) (tf - t0) / CLOCKS_PER_SEC);
+    }
 
-  /* Write spikes events */
-  write_spikes_events(fname, cores, g_pms.num_cores);
+    pthread_mutex_destroy(&lock);
+    _pthread_barrier_destroy(&barrier);
 
-  /* Write final synaptic strengths */
-  write_final_weights(fname, cores, g_pms.num_cores);
+    /* Write spikes events */
+    write_spikes_events(fname, cores, g_pms.num_cores);
 
-  /* Write the shared memories per core */
-  write_shared_memories(fname, cores, g_pms.num_cores);
+    /* Write final synaptic strengths */
+    write_final_weights(fname, cores, g_pms.num_cores);
 
-  /* Close all the monitor files */
-  close_cores_monitor_files(cores, g_pms.num_cores);
+    /* Write the shared memories per core */
+    write_shared_memories(fname, cores, g_pms.num_cores);
 
-  /* Write spike statistics */
-  write_spike_statistics(fname, cores, g_pms.num_cores);
+    /* Close all the monitor files */
+    close_cores_monitor_files(cores, g_pms.num_cores);
 
-  for (p = 0; p < g_pms.num_cores; ++p) {
-    array_list_destroy(&shared_[p].units, 0);
-    dealloc(shared_[p].units);
-  }
-  dealloc(shared_);
+    /* Write spike statistics */
+    write_spike_statistics(fname, cores, g_pms.num_cores);
 
-  /* Destroy neurons parameters groups and clean up memories */
-  dealloc_cores(&cores, g_pms.num_cores);
-  dealloc(cores);
-  if (!g_pms.is_single_core)
-    dealloc(cores_t);
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        array_list_destroy(&shared_[p].units, 0);
+        dealloc(shared_[p].units);
+    }
+    dealloc(shared_);
 
-  return 0;
+    /* Destroy neurons parameters groups and clean up memories */
+    dealloc_cores(&cores, g_pms.num_cores);
+    dealloc(cores);
+    if (!g_pms.is_single_core)
+        dealloc(cores_t);
+
+    return 0;
 }

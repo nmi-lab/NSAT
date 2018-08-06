@@ -38,6 +38,7 @@ FNAME_FIELDS = ['nsat_params_map',
                 'shared_mem',
                 'pickled']
 
+
 def pack(data, typ='i'):
     import struct
     data = np.array(data).flatten()
@@ -103,16 +104,19 @@ class c_nsat_fnames(Structure):
     """ fnames class implements the C struct: fnames. Contains the
         filenames of all the necessary input files.
     """
-    _fields_ = [(s, c_char_p) for s in FNAME_FIELDS ]
+    _fields_ = [(s, c_char_p) for s in FNAME_FIELDS]
+
 
 class nsat_fnames(object):
     """ fnames class implements the C struct: fnames. Contains the
         filenames of all the necessary input files.
     """
-    fields   = FNAME_FIELDS
+    fields = FNAME_FIELDS
+
     def __init__(self):
         for f in self.fields:
             setattr(self, f, '')
+
 
 def generate_c_fnames(fname=None):
     c_fnames = c_nsat_fnames()
@@ -403,7 +407,7 @@ class C_NSATWriterSingleThread(C_NSATWriter):
                     data = ad[(pos_t + delta_pos):(pos_t + delta_pos + tc)]
                     pos_t = pos_t + delta_pos + tc
                     data = list(
-                             zip(data >> CHANNEL_OFFSET, data & (ADDR_MASK)))
+                        zip(data >> CHANNEL_OFFSET, data & (ADDR_MASK)))
                     fe.write(pack(data, 'i'))
 
 

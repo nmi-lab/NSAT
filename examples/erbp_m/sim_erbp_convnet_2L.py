@@ -22,8 +22,8 @@ from load_mnist import *
 import time
 from pyNSATlib.laxesis import *
 
-N_FEAT1 = 16
-N_FEAT2 = 32
+N_FEAT1 = 32
+N_FEAT2 = 64
 stride = 2
 ksize = 5
 
