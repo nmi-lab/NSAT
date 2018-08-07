@@ -14,7 +14,7 @@
 import os
 import numpy as np
 from pyNCSre import pyST
-from global_vars import *
+from pyNSATlib.global_vars import *
 from ctypes import POINTER, cdll, c_int, Structure, c_char_p
 import copy
 import _pickle
@@ -55,7 +55,7 @@ def find_nsat_library():
 def run_c_nsat():
 #     from ctypes import POINTER, cdll, c_int
 #     from global_vars import c_nsat_fnames
- 
+
     _nsat = cdll.LoadLibrary(find_nsat_library())
  
     # handle = _nsat._handle

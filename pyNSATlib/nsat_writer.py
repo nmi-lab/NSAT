@@ -12,12 +12,13 @@
 import numpy as np
 import warnings
 import os
-from utils import *
-from global_vars import *
 from ctypes import Structure, c_char_p
 from pyNCSre import pyST
 import time
 import pyNSATlib
+from pyNSATlib.utils import *
+from pyNSATlib.global_vars import *
+
 
 def pack(data, typ='i'):
     import struct
