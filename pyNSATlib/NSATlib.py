@@ -253,7 +253,7 @@ class coreConfig(object):
                    Ninputs: {n_inputs}
                    Nneurons: {n_neurons}
                    Ngroups: {n_groups}
-                   L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz,**self.__dict__)
+                   L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz, **self.__dict__)
 
 
     def gen_core_cfg(self, core_cfg, n_states, n_neurons, n_inputs):
