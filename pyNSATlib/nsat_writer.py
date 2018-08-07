@@ -12,32 +12,12 @@
 import numpy as np
 import warnings
 import os
-from .utils import *
-from .global_vars import *
+from utils import *
+from global_vars import *
 from ctypes import Structure, c_char_p
 from pyNCSre import pyST
 import time
 import pyNSATlib
-
-
-FNAME_FIELDS = ['nsat_params_map',
-                'lrn_params_map',
-                'params',
-                'syn_wgt_table',
-                'syn_ptr_table',
-                'ext_events',
-                'synw',
-                'synw_final',
-                'events',
-                'states',
-                'check_pms',
-                'stdp_fun',
-                'stats_nsat',
-                'stats_ext',
-                'l1_conn',
-                'shared_mem',
-                'pickled']
-
 
 def pack(data, typ='i'):
     import struct
@@ -57,7 +37,9 @@ class NSATWriter(object):
         if not os.path.exists(path):
             warnings.warn('Path {0} does not exist, creating'.format(path))
             os.makedirs(path)
-        self.fname = self.generate_fnames(path + '/' + prefix)
+            
+        # set global file names
+        fnames.generate(path + '/' + prefix)
 
     def write(self, write_events=True,
               write_weights=True,
@@ -83,7 +65,7 @@ class NSATWriter(object):
             self.cfg.set_groups()
 
         if write_corecfgs:
-            self.write_corecfgs(self.fname.params)
+            self.write_corecfgs()
 
         if self.cfg.ext_evts:
             self.write_ext_events()
@@ -91,7 +73,7 @@ class NSATWriter(object):
         print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
         start2_t = time.perf_counter()
         
-        self.cfg.writefileb(self.fname.pickled)
+        self.cfg.writefileb(fnames.pickled)
 
         print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start2_t))
 
@@ -100,72 +82,24 @@ class NSATWriter(object):
             self.write_L1connectivity()
 
 
-class c_nsat_fnames(Structure):
-    """ fnames class implements the C struct: fnames. Contains the
-        filenames of all the necessary input files.
-    """
-    _fields_ = [(s, c_char_p) for s in FNAME_FIELDS]
-
-
-class nsat_fnames(object):
-    """ fnames class implements the C struct: fnames. Contains the
-        filenames of all the necessary input files.
-    """
-    fields = FNAME_FIELDS
-
-    def __init__(self):
-        for f in self.fields:
-            setattr(self, f, '')
-
-
-def generate_c_fnames(fname=None):
-    c_fnames = c_nsat_fnames()
-    if fname is not None:
-        for f in fname.fields:
-            setattr(c_fnames, f, getattr(fname, f).encode('utf-8'))
-    return c_fnames
-
-
-def generate_default_fnames(path):
-    fname = nsat_fnames()
-    fname.nsat_params_map = path + "_nsat_params_map.dat"
-    fname.lrn_params_map = path + "_lrn_params_map.dat"
-    fname.params = path + "_params.dat"
-    fname.syn_wgt_table = path + "_wgt_table"
-    fname.syn_ptr_table = path + "_ptr_table"
-    fname.ext_events = path + "_ext_events"
-    fname.synw = path + "_weights"
-    fname.synw_final = path + "_weights_final"
-    fname.events = path + "_events"
-    fname.states = path + "_states"
-    fname.check_pms = path + "_cpms.dat"
-    fname.stdp_fun = path + "_stdp_fun.dat"
-    fname.stats_nsat = path + "_stats_nsat"
-    fname.stats_ext = path + "_stats_ext"
-    fname.l1_conn = path + "_l1_conn.dat"
-    fname.shared_mem = path + "_shared_mem"
-    fname.pickled = path + '_pickled_config'
-    return fname
-
-
 class C_NSATWriter(NSATWriter):
     # Struct contains all the file names
 
     def generate_fnames(self, path):
-        return generate_default_fnames(path)
+        return fnames.generate(path)
 
     def write_globals(self):
         # Globals are written in write_corecfgs
         pass
 
-    def write_corecfgs(self, fname):
+    def write_corecfgs(self):
         '''
         Write all parameters for c_nsat simulations
         *inputs*: fnames
         *outputs*: None
         '''
         cfg = self.cfg
-        with open(fname, 'wb') as fh:
+        with open(fnames.params, 'wb') as fh:
             # Global parameters
             fh.write(pack(cfg.N_CORES, 'i'))
             fh.write(pack(cfg.single_core, '?'))
@@ -273,12 +207,12 @@ class C_NSATWriter(NSATWriter):
             """
 
         # nmap = np.zeros((num_neurons, ), dtype='i')
-        with open(self.fname.nsat_params_map, 'wb') as f:
+        with open(fnames.nsat_params_map, 'wb') as f:
             for p, core_cfg in cfg:
                 f.write(pack(core_cfg.nmap, 'i'))
 
         # nmap = np.zeros((num_neurons, ), dtype='i')
-        with open(self.fname.lrn_params_map, 'wb') as f:
+        with open(fnames.lrn_params_map, 'wb') as f:
             for p, core_cfg in cfg:
                 lrnmap_unrolled = np.zeros(
                     [core_cfg.n_neurons, core_cfg.n_states], dtype='int')
@@ -305,7 +239,7 @@ class C_NSATWriter(NSATWriter):
             tm_count = Counter(tm)
             tms = list(range(1, cfg.sim_ticks))
             pos_t = 0
-            filename = self.fname.ext_events + ('_core_' + str(core) + '.dat')
+            filename = fnames.ext_events + ('_core_' + str(core) + '.dat')
             with open(filename, 'wb') as fe:
                 for t in tms:
                     tc = tm_count[t]
@@ -323,7 +257,7 @@ class C_NSATWriter(NSATWriter):
     def write_L0_ptr_table(self):
         for p, core_cfg in self.cfg:
             from scipy.sparse import issparse
-            filename = self.fname.syn_ptr_table + ('_core_' + str(p) + '.dat')
+            filename = fnames.syn_ptr_table + ('_core_' + str(p) + '.dat')
             with open(filename, 'wb') as fw:
                 if issparse(core_cfg.ptr_table):
                     cw = core_cfg.ptr_table.tocoo()
@@ -346,14 +280,14 @@ class C_NSATWriter(NSATWriter):
 
     def write_L0_wgt_table(self):
         for p, core_cfg in self.cfg:
-            filename = self.fname.syn_wgt_table + ('_core_' + str(p) + '.dat')
+            filename = fnames.syn_wgt_table + ('_core_' + str(p) + '.dat')
             with open(filename, 'wb') as fw:
                 fw.write(pack(core_cfg.wgt_table, 'i'))
 
     def write_L1connectivity(self):
         L1 = self.cfg.L1_connectivity
         n = len(L1)
-        with open(self.fname.l1_conn, 'wb') as fw:
+        with open(fnames.l1_conn, 'wb') as fw:
             fw.write(pack(n, 'i'))
             for src, dsts in L1.items():
                 nonzero_elems = len((dsts))
@@ -397,7 +331,7 @@ class C_NSATWriterSingleThread(C_NSATWriter):
         tm_count = Counter(tm)
         tms = list(range(1, cfg.sim_ticks))
         pos_t = 0
-        filename = self.fname.ext_events
+        filename = fnames.ext_events
         with open(filename, 'wb') as fe:
             for t in tms:
                 tc = tm_count[t]

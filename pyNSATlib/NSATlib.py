@@ -14,7 +14,8 @@
 import os
 import numpy as np
 from pyNCSre import pyST
-from .global_vars import *
+from global_vars import *
+from ctypes import POINTER, cdll, c_int, Structure, c_char_p
 import copy
 import _pickle
 
@@ -36,18 +37,33 @@ def find_nsat_library():
     raise RuntimeError('libnsat.so file not found. Try adding nsat lib \
                         directory to LD_LIBRARY_PATH')
 
-
-def run_c_nsat(fname):
-    from ctypes import POINTER, cdll, c_int
-    from .nsat_writer import c_nsat_fnames, generate_c_fnames
-
+# 
+# def run_c_nsat(fname):
+#     from ctypes import POINTER, cdll, c_int
+# #    from .nsat_writer import c_nsat_fnames, generate_c_fnames
+# 
+#     _nsat = cdll.LoadLibrary(find_nsat_library())
+# 
+#     # handle = _nsat._handle
+#     _nsat.iterate_nsat.argtypes = (POINTER(c_nsat_fnames),)
+#     _nsat.iterate_nsat.restype = c_int
+# 
+#     flag = _nsat.iterate_nsat(generate_c_fnames(fname))
+#     flag = _nsat.iterate_nsat(generate_c_fnames(fname))
+#     return flag
+  
+def run_c_nsat():
+#     from ctypes import POINTER, cdll, c_int
+#     from global_vars import c_nsat_fnames
+ 
     _nsat = cdll.LoadLibrary(find_nsat_library())
-
+ 
     # handle = _nsat._handle
+    c_fnames = c_nsat_fnames(fname=fnames)
     _nsat.iterate_nsat.argtypes = (POINTER(c_nsat_fnames),)
     _nsat.iterate_nsat.restype = c_int
-
-    flag = _nsat.iterate_nsat(generate_c_fnames(fname))
+ 
+    flag = _nsat.iterate_nsat(c_fnames)
     return flag
 
 
@@ -62,7 +78,7 @@ def build_SpikeList(evs_time,
 
     inputs:
     *evs_time*: list of event timesteps
-    *evs_addr*: list of event addresses
+                      *evs_addr*: list of event addresses
     *dt*: scaling of timesteps (default is ms)
     *id_list*: list of neuron ids (optional). If no id_list is provided,
     neurons that have never spikes will not be represented explicitely.
@@ -332,7 +348,7 @@ class coreConfig(object):
 
         if n_states == None:
             n_states = self.n_states
-        from .utils import latex_print_group
+        from pyNSATlib.utils import latex_print_group
         import copy
         NSAT_parameters = copy.deepcopy(self.NSAT_parameters)
         NSAT_parameters.pop(NSAT_parameters.index('lrnmap'))

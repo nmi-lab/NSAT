@@ -130,24 +130,20 @@ def setup():
     c_nsat_writer.write()
     
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    return c_nsat_writer.fname
 
 
-def run(fnames):
+def run():
     # Call the C NSAT
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
-    nsat.run_c_nsat(fnames)
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     print("Plotting data")
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
-    # pip = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
-    #                      sim_ticks=sim_ticks,
-    #                      id_list=range(N_NEURONS[0])).time_slice(1000, sim_ticks-1000).mean_rates()
     pip = nsat.importAER(c_nsat_reader.read_events(0),
                          sim_ticks=sim_ticks,
                          id_list=list(range(cfg.core_cfgs[0].n_neurons))).time_slice(1000, sim_ticks-1000).mean_rates()
@@ -178,8 +174,8 @@ if __name__ == '__main__':
     print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
     
-    filenames = setup()
-    run(filenames)
+    setup()
+    run()
     
     print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
  

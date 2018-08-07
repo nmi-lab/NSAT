@@ -129,22 +129,21 @@ def setup():
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    return c_nsat_writer.fname
 
 
-def run(fnames):
+def run():
     # Call the C NSAT
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
     
-    nsat.run_c_nsat(fnames)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
-    out_spikelist = nsat.importAER(nsat.read_from_file(fnames.events+'_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
@@ -163,8 +162,8 @@ if __name__ == '__main__':
     print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
     
-    filenames = setup()
-    run(filenames)
+    setup()
+    run()
     
     print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
     
