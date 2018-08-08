@@ -21,6 +21,7 @@ sim_ticks = 1000                # Simulation ticks
 SL = None
 spk0 = None
 
+
 def SimSpikingStimulus(rates, t_sim=None):
     m = np.shape(rates)[0]
     n = int(m / 2)
@@ -65,8 +66,9 @@ def PeriodicPrePostSpikingStimulus(freqs, diff, ticks=1000):
 
 def setup():
     global SL, spk0
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     N_CORES = 1                     # Number of cores
     N_NEURONS = [1]                 # Number of neurons per core (list)
     N_INPUTS = [2]                 # Number of inputs per core (list)
@@ -189,7 +191,7 @@ def setup():
 #    intel_fpga_writer.write_globals()
 
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT
@@ -275,17 +277,19 @@ def run():
     #    plt.plot(wt[:, 1, 1], 'r', lw=3)
     #    plt.axvline(i, color='k', lw=1)
 
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

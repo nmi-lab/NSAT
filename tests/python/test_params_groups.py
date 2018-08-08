@@ -14,9 +14,11 @@ import matplotlib.pylab as plt
 import os
 import time
 
+
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     sim_ticks = 100         # Simulation time
     N_CORES = 1             # Number of cores
     N_NEURONS = [8]         # Number of neurons
@@ -93,7 +95,7 @@ def setup():
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT
@@ -112,17 +114,19 @@ def run():
         ax = fig.add_subplot(8, 1, i)
         ax.plot(states_core0[:-1, i, 0], 'b', lw=3)
 
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

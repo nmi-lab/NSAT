@@ -26,8 +26,9 @@ matplotlib.rcParams['figure.subplot.bottom'] = .2
 
 # Globals
 sim_ticks = 1000                # Simulation time
-core = 0 
+core = 0
 SL = None
+
 
 def SimSpikingStimulus(stim, time=1000, t_sim=None):
     '''
@@ -40,14 +41,16 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
     n = np.shape(stim)[0]
     SL = pyST.SpikeList(id_list=list(range(n)))
     for i in range(n):
-        SL[i] = pyST.STCreate.poisson_generator(stim[i], t_start=1, t_stop=t_sim)
+        SL[i] = pyST.STCreate.poisson_generator(
+            stim[i], t_start=1, t_stop=t_sim)
     return SL
 
 
 def setup():
     global SL
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     np.random.seed(100)             # Numpy RNG seed
     pyST.STCreate.seed(130)         # PyNCS RNG seed
     N_CORES = 1                     # Number of cores
@@ -78,25 +81,25 @@ def setup():
                                  plasticity_en=np.array([True], 'bool'),
                                  ben_clock=True)
 
-    cfg.core_cfgs[core].sigma[0] = [0,0,10,0]
+    cfg.core_cfgs[core].sigma[0] = [0, 0, 10, 0]
 
     # Transition matrix group 0
     cfg.core_cfgs[core].A[0] = [[-5, OFF, OFF, OFF],
-                             [3, -5, OFF, OFF],
-                             [OFF, OFF, -6, OFF],
-                             [OFF, OFF, OFF, OFF]]
+                                [3, -5, OFF, OFF],
+                                [OFF, OFF, -6, OFF],
+                                [OFF, OFF, OFF, OFF]]
 
     # Transition matrix group 1
     cfg.core_cfgs[core].A[1] = [[OFF, OFF, OFF, OFF],
-                             [OFF, OFF, OFF, OFF],
-                             [OFF, OFF, OFF, OFF],
-                             [OFF, OFF, OFF, OFF]]
+                                [OFF, OFF, OFF, OFF],
+                                [OFF, OFF, OFF, OFF],
+                                [OFF, OFF, OFF, OFF]]
 
     # Sign matrix group 0
     cfg.core_cfgs[core].sA[0] = [[-1, 1, 1, 1],
-                              [1, -1, 1, 1],
-                              [1, 1, -1, 1],
-                              [1, 1, 1, -1]]
+                                 [1, -1, 1, 1],
+                                 [1, 1, -1, 1],
+                                 [1, 1, 1, -1]]
 
     # Threshold
     cfg.core_cfgs[core].Xth[0] = 25000
@@ -106,7 +109,7 @@ def setup():
     cfg.core_cfgs[core].b[0] = [0,  0, 0, 0]
     # Initial conditions
     cfg.core_cfgs[core].Xinit = np.array([[0, 0, 0, 0] for _ in
-                                      range(N_NEURONS[0])])
+                                          range(N_NEURONS[0])])
     # Reset value
     cfg.core_cfgs[core].Xreset[0] = [0, MAX, MAX, MAX]
     # Turn reset on
@@ -123,13 +126,13 @@ def setup():
 
     # Parameters groups mapping function
     cfg.core_cfgs[core].nmap = np.zeros((N_NEURONS[0],), dtype='int')
-    lrnmap = 1+np.zeros((N_GROUPS, N_STATES[0]), dtype='int')
+    lrnmap = 1 + np.zeros((N_GROUPS, N_STATES[0]), dtype='int')
     lrnmap[0, 1] = 0
     cfg.core_cfgs[core].lrnmap = lrnmap
 
     # Synaptic weights
     W = np.zeros([N_UNITS, N_UNITS, N_STATES[core]], 'int')
-    W[0:100, N_INPUTS[core]:, 1] = np.eye(N_NEURONS[core])*100
+    W[0:100, N_INPUTS[core]:, 1] = np.eye(N_NEURONS[core]) * 100
     W[100, N_INPUTS[core]:, 2] = 100
 
     # Adjacent matrix
@@ -143,17 +146,17 @@ def setup():
     cfg.core_cfgs[core].ptr_table = ptr_table
 
     # Learning STDP parameters
-    cfg.core_cfgs[core].tca  = [[24, 48] for _ in range(NLRN_GROUPS)]
+    cfg.core_cfgs[core].tca = [[24, 48] for _ in range(NLRN_GROUPS)]
     cfg.core_cfgs[core].hica = [[-3, -5, -6] for _ in range(NLRN_GROUPS)]
     cfg.core_cfgs[core].sica = [[1, 1, 1] for _ in range(NLRN_GROUPS)]
     cfg.core_cfgs[core].slca = [[16, 16, 16] for _ in range(NLRN_GROUPS)]
-    cfg.core_cfgs[core].tac  = [[-32, -64] for _ in range(NLRN_GROUPS)]
+    cfg.core_cfgs[core].tac = [[-32, -64] for _ in range(NLRN_GROUPS)]
     cfg.core_cfgs[core].hiac = [[-6, -8, -9] for _ in range(NLRN_GROUPS)]
     cfg.core_cfgs[core].siac = [[-1, -1, -1] for _ in range(NLRN_GROUPS)]
     cfg.core_cfgs[core].slac = [[16, 16, 16] for _ in range(NLRN_GROUPS)]
 
     # Prepare external stimulus (spikes events)
-    stim = [50]*N_NEURONS[core]
+    stim = [50] * N_NEURONS[core]
     SL = SimSpikingStimulus(stim, t_sim=sim_ticks)
     SLr = pyST.SpikeList(id_list=[100])
     SLr[100] = pyST.STCreate.inh_poisson_generator(rate=np.array([0., 100., 0.]),
@@ -166,9 +169,9 @@ def setup():
     # Write C NSAT parameters binary file
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_rSTDP')
     c_nsat_writer.write()
-    
+
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT
@@ -181,7 +184,8 @@ def run():
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[core][0], states[core][1]
 
-    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[130, 150, 120])
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[
+                                                           130, 150, 120])
     wt, pids = wt[0], pids[0]
     in_spikelist = SL
     out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
@@ -244,18 +248,20 @@ def run():
     plt.setp(ax1.get_xticklabels(), visible=False)
     ax1.get_yaxis().set_label_coords(-0.12, 0.5)
     plt.tight_layout()
-    
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

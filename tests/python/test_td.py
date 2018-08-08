@@ -19,6 +19,7 @@ import time
 sim_ticks = 50000              # Simulation time
 SL = None
 
+
 def RegularSpikingStimulus(freqs, ticks=1000):
     global SL
     pyST.STCreate.seed(100)
@@ -30,22 +31,23 @@ def RegularSpikingStimulus(freqs, ticks=1000):
         # SL[i] = pyST.STCreate.regular_generator(freqs[i],
         #                                         t_start=1,
         #                                         t_stop=ticks)
-        if i != (m-1):
+        if i != (m - 1):
             t_start = tm
-            t_stop = tm+2000
+            t_stop = tm + 2000
             SL[i] = pyST.STCreate.poisson_generator(freqs[i],
                                                     t_start,
                                                     t_stop)
             tm += 2000
-        SL[m-2] = SL[m-3]
-        SL[m-1] = SL[m-3]
+        SL[m - 2] = SL[m - 3]
+        SL[m - 1] = SL[m - 3]
 
     return SL
 
 
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     pyST.STCreate.seed(100)
     N_CORES = 1                 # Number of cores
     N_NEURONS = [17]            # Number of neurons per core
@@ -137,18 +139,18 @@ def setup():
     cfg.core_cfgs[0].t_ref[0] = 0
     # cfg.core_cfgs[0].Xth[0] = 30
     # Spike increment value
-    cfg.core_cfgs[0].XspikeIncrVal[1] = np.array([-1000]+[0]*7, 'int')
+    cfg.core_cfgs[0].XspikeIncrVal[1] = np.array([-1000] + [0] * 7, 'int')
     # Additive noise variance
-    cfg.core_cfgs[0].sigma[0] = np.array([15000]+[0]*7, 'int')
+    cfg.core_cfgs[0].sigma[0] = np.array([15000] + [0] * 7, 'int')
     # refractory period
     cfg.core_cfgs[0].t_ref[0] = 0
     # Reset value
-    cfg.core_cfgs[0].Xreset[0] = np.array([0]+[XMAX]*7, 'int')
+    cfg.core_cfgs[0].Xreset[0] = np.array([0] + [XMAX] * 7, 'int')
 
     # Turn reset on
-    cfg.core_cfgs[0].XresetOn[0] = np.array([True]+[False]*7, 'bool')
-    cfg.core_cfgs[0].XresetOn[1] = np.array([False]*8, 'bool')
-    cfg.core_cfgs[0].XresetOn[2] = np.array([False]*8, 'bool')
+    cfg.core_cfgs[0].XresetOn[0] = np.array([True] + [False] * 7, 'bool')
+    cfg.core_cfgs[0].XresetOn[1] = np.array([False] * 8, 'bool')
+    cfg.core_cfgs[0].XresetOn[2] = np.array([False] * 8, 'bool')
 
     # Mapping function between neurons and NSAT parameters groups
     cfg.core_cfgs[0].nmap = np.zeros((N_NEURONS[0],), dtype='int')
@@ -157,19 +159,19 @@ def setup():
 
     # Synaptic strength
     from scipy.linalg import toeplitz
-    col = np.zeros((N_INPUTS[0]-1,))
+    col = np.zeros((N_INPUTS[0] - 1,))
     col[0] = 1
-    row = np.zeros((N_NEURONS[0]-2,))
+    row = np.zeros((N_NEURONS[0] - 2,))
     row[0:3] = np.array([1, 2, 1])
     T = toeplitz(col, row)
     W = np.zeros((N_UNITS, N_UNITS, N_STATES[0]), 'i')
-    W[:N_INPUTS[0]-1, N_INPUTS[0]:-2, 1] = T
-    W[N_INPUTS[0]:, N_UNITS-2, 1] = 100
-    W[N_INPUTS[0]:, N_UNITS-2, 2] = 100
-    W[N_INPUTS[0]:, N_UNITS-1, 2] = 1
-    W[N_INPUTS[0]:, N_UNITS-1, 3] = 1
-    W[N_INPUTS[0]-1, N_UNITS-1, 5] = 100
-    W[N_INPUTS[0]-1, N_UNITS-1, 6] = 100
+    W[:N_INPUTS[0] - 1, N_INPUTS[0]:-2, 1] = T
+    W[N_INPUTS[0]:, N_UNITS - 2, 1] = 100
+    W[N_INPUTS[0]:, N_UNITS - 2, 2] = 100
+    W[N_INPUTS[0]:, N_UNITS - 1, 2] = 1
+    W[N_INPUTS[0]:, N_UNITS - 1, 3] = 1
+    W[N_INPUTS[0] - 1, N_UNITS - 1, 5] = 100
+    W[N_INPUTS[0] - 1, N_UNITS - 1, 6] = 100
 
     CW = W.astype('bool')
 
@@ -193,7 +195,7 @@ def setup():
     c_nsat_writer.write()
 
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT
@@ -208,7 +210,7 @@ def run():
     # np.save('states', states_core0)
 
     in_spikelist = SL
-    ifname = nsat.fnames.events+'_core_0.dat'
+    ifname = nsat.fnames.events + '_core_0.dat'
     out_spikelist = nsat.importAER(nsat.read_from_file(ifname),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
@@ -217,7 +219,7 @@ def run():
     fig = plt.figure(figsize=(10, 10))
     for i in range(1, 9):
         ax = fig.add_subplot(8, 1, i)
-        ax.plot(states_core0[:-1, 15, i-1], 'b', lw=1.5)
+        ax.plot(states_core0[:-1, 15, i - 1], 'b', lw=1.5)
 
     # fig = plt.figure(figsize=(10, 10))
     # for i in range(1, 9):
@@ -225,18 +227,20 @@ def run():
     #     ax.plot(states_core0[:-1, 16, i-1], 'b', lw=1.5)
 
     # out_spikelist.raster_plot()
-    
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-        
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

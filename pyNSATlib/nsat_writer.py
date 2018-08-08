@@ -38,7 +38,7 @@ class NSATWriter(object):
         if not os.path.exists(path):
             warnings.warn('Path {0} does not exist, creating'.format(path))
             os.makedirs(path)
-            
+
         # set global file names
         fnames.generate(path + '/' + prefix)
 
@@ -58,10 +58,11 @@ class NSATWriter(object):
                         Useful when external events generation is long or
                         imported from another experiment
         '''
-        
-        print('Begin %s:NSATWriter.write()' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+        print('Begin %s:NSATWriter.write()' %
+              (os.path.splitext(os.path.basename(__file__))[0]))
         start_t = time.perf_counter()
-    
+
         if not self.cfg.groups_set:
             self.cfg.set_groups()
 
@@ -71,12 +72,14 @@ class NSATWriter(object):
         if self.cfg.ext_evts:
             self.write_ext_events()
 
-        print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+        print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (
+            os.path.splitext(os.path.basename(__file__))[0], time.perf_counter() - start_t))
         start2_t = time.perf_counter()
-        
+
         self.cfg.writefileb(fnames.pickled)
 
-        print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start2_t))
+        print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (
+            os.path.splitext(os.path.basename(__file__))[0], time.perf_counter() - start2_t))
 
         if write_weights:
             self.write_L0connectivity()
@@ -122,10 +125,12 @@ class C_NSATWriter(NSATWriter):
                 try:
                     fh.write(pack(cfg.plasticity_en[p], '?'))
 #                else: fh.write(bytes('cfgplasticity_en[p] OOB','utf-8'))
-                except: fh.write(bytes('cfgplasticity_en[p] OOB','utf-8'))
+                except:
+                    fh.write(bytes('cfgplasticity_en[p] OOB', 'utf-8'))
                 try:
                     fh.write(pack(cfg.gated_learning[p], '?'))
-                except: fh.write(bytes('cfgggated_lerning_en[p] OOB','utf-8'))
+                except:
+                    fh.write(bytes('cfgggated_lerning_en[p] OOB', 'utf-8'))
                 fh.write(pack(core_cfg.n_inputs, 'i'))
                 fh.write(pack(core_cfg.n_neurons, 'i'))
                 fh.write(pack(core_cfg.n_states, 'i'))
@@ -182,7 +187,8 @@ class C_NSATWriter(NSATWriter):
                             fh.write(pack(core_cfg.slac[j], 'i'))
                             fh.write(pack(core_cfg.is_rr_on[j], '?'))
                             fh.write(pack(core_cfg.rr_num_bits[j], 'i'))
-                except: fh.write(bytes('%d does not exist'.format(p),'utf-8'))
+                except:
+                    fh.write(bytes('%d does not exist'.format(p), 'utf-8'))
             # Monitor parameters
             # TODO: Separately for every core
             for p, core_cfg in cfg:
@@ -356,11 +362,11 @@ def read_from_file(fname):
 
 if __name__ == '__main__':
     cfg = pyNSATlib.ConfigurationNSAT(N_CORES=2,
-                            N_INPUTS=[10, 10],
-                            N_NEURONS=[512, 100],
-                            N_STATES=[4, 2],
-                            bm_rng=True,
-                            ben_clock=True)
+                                      N_INPUTS=[10, 10],
+                                      N_NEURONS=[512, 100],
+                                      N_STATES=[4, 2],
+                                      bm_rng=True,
+                                      ben_clock=True)
 
     cfg.core_cfgs[0].W[:cfg.core_cfgs[0].n_inputs,
                        cfg.core_cfgs[0].n_inputs:] = 1

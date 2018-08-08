@@ -26,6 +26,7 @@ import time
 
 sim_ticks = 25000            # Simulation time
 
+
 def SimSpikingStimulus(stim, t=1000, t_sim=None):
     '''
     Times must be sorted. ex: times = [0, 1, 2] ; scale = [1,0]
@@ -41,8 +42,9 @@ def SimSpikingStimulus(stim, t=1000, t_sim=None):
 
 def setup():
     global SL
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     N_CORES = 1                 # Number of cores
     N_test = 2                  # Number of tests
     Nv = 100                    # Visible neurons
@@ -126,9 +128,10 @@ def setup():
     cfg.set_ext_events(ext_evts_data)
 
     # Write C NSAT parameters binary files
-    c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_sigmoid_ext')
+    c_nsat_writer = nsat.C_NSATWriter(
+        cfg, path='/tmp', prefix='test_sigmoid_ext')
     c_nsat_writer.write()
-    
+
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
 
@@ -146,36 +149,39 @@ def run():
 
     pip = nsat.importAER(c_nsat_reader.read_events(0),
                          sim_ticks=sim_ticks,
-                         id_list=list(range(cfg.core_cfgs[0].n_neurons))).time_slice(1000, sim_ticks-1000).mean_rates()
+                         id_list=list(range(cfg.core_cfgs[0].n_neurons))).time_slice(1000, sim_ticks - 1000).mean_rates()
     x = np.arange(pip.shape[0])
 
     from scipy.optimize import curve_fit
     # define "to-fit" function
+
     def sigmoid(x, a, b, c):
         return a / (1 + np.exp(-b * x / a) * (a - c) / a)
 
     # Fit data to function sigmoid
     popt, pcov = curve_fit(sigmoid, x, pip)
     print(("Sigmoid's parameters: a = {}, b = {}, c = {}".format(popt[0],
-                                                                popt[1],
-                                                                popt[2])))
+                                                                 popt[1],
+                                                                 popt[2])))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.plot(x, pip, 'k', lw=2)
     ax.plot(x, sigmoid(x, popt[0], popt[1], popt[2]), 'r--', lw=2)
-    
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

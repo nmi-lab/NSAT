@@ -18,6 +18,7 @@ import time
 
 sim_ticks = 200                # Simulation ticks
 
+
 def SimSpikingStimulus(t_sim=None):
     SL = pyST.SpikeList(id_list=[0, 1, 2, 3])
     spk_train0 = [60, 110]
@@ -32,8 +33,9 @@ def SimSpikingStimulus(t_sim=None):
 
 
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     N_CORES = 1                     # Number of cores
     N_NEURONS = [4]                 # Number of neurons per core (list)
     N_INPUTS = [4]                 # Number of inputs per core (list)
@@ -160,9 +162,9 @@ def setup():
     # Write the C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_stdp')
     c_nsat_writer.write()
-    
+
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+
 
 def run():
     # Call the C NSAT
@@ -249,17 +251,19 @@ def run():
         # ax.set_xlim([0, sim_ticks])
     ax.set_xlim([0, sim_ticks])
 
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

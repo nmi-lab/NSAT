@@ -14,6 +14,7 @@ import pyNSATlib as nsat
 import time
 import os
 
+
 def setup():
     sim_ticks = 500         # Total simulation time
     N_CORES = 1             # Number of cores
@@ -140,11 +141,11 @@ def setup():
 
 
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
 #      run(filenames)
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))    
-    
-    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

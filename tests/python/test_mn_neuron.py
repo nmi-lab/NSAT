@@ -14,8 +14,10 @@ from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
 import time
 
+
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     OFF = -16
     MAX = nsat.MAX
     MIN = nsat.XMIN
@@ -93,9 +95,9 @@ def setup():
 #    # intel_fpga_writer.write()
 #    # intel_fpga_writer.write_globals()
     cfg.core_cfgs[0].latex_print_parameters(1)
-    
+
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT
@@ -113,19 +115,21 @@ def run():
     fig = plt.figure(figsize=(10, 10))
     for i in range(1, 5):
         ax = fig.add_subplot(4, 1, i)
-        ax.plot(states_core0[:-1, 0, i-1], 'b', lw=3)
-    
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+        ax.plot(states_core0[:-1, 0, i - 1], 'b', lw=3)
+
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

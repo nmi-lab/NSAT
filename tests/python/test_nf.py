@@ -18,6 +18,7 @@ import time
 
 sim_ticks = 2500
 
+
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
     SL = pyST.SpikeList(id_list=list(range(N_NEURONS)))
@@ -109,7 +110,7 @@ def h(x, sigma):
     return scale * np.exp(-x**2 / sigma)
 
 
-def kernel_(size, amp=(5, 5), sigma=(1.0/28.0, 1.0/20.0)):
+def kernel_(size, amp=(5, 5), sigma=(1.0 / 28.0, 1.0 / 20.0)):
     w = np.zeros((size, size))
     for i in range(size):
         for j in range(size):
@@ -120,8 +121,9 @@ def kernel_(size, amp=(5, 5), sigma=(1.0/28.0, 1.0/20.0)):
 
 
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
+
     N_CORES = 1
     N_NEURONS = [100]
     N_INPUTS = [100]
@@ -190,7 +192,7 @@ def setup():
     cfg.core_cfgs[0].nmap = np.zeros((N_NEURONS[0],), dtype='int')
 
     # Set external events
-    rates = [20]*N_INPUTS[0]
+    rates = [20] * N_INPUTS[0]
     ext_evts_data, sl = PoissonSpikingStimulus(rates, n_inputs=N_INPUTS[0])
     events_i = sl.convert()
     mat = np.zeros((sim_ticks, N_INPUTS[0]))
@@ -229,21 +231,22 @@ def run():
     plt.figure()
     for i in range(1, 5):
         plt.subplot(4, 1, i)
-        plt.plot(states_core0[:, :, i-1])
+        plt.plot(states_core0[:, :, i - 1])
 
     plt.figure()
     S = np.maximum(states_core0[:, :, 0], 0)
-    plt.imshow(S, interpolation='spline36', cmap=plt.get_cmap('gray'),#plt.cm.gray,
+    plt.imshow(S, interpolation='spline36', cmap=plt.get_cmap('gray'),  # plt.cm.gray,
                aspect='auto', origin='lower')
 
-    spks = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
+    spks = nsat.importAER(nsat.read_from_file(nsat.fnames.events + '_core_0.dat'),
                           sim_ticks=sim_ticks,
                           id_list=list(range(cfg.core_cfgs[0].n_neurons)))
-    
+
     raster = spks.raster_plot()
-    raster.savefig('/tmp/%s_raster.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    raster.savefig('/tmp/%s_raster.png' %
+                   (os.path.splitext(os.path.basename(__file__))[0]))
     raster.close()
-    
+
     # Plot the results
 #     events = spks.convert()
 #     mat = np.zeros((sim_ticks, N_NEURONS[0]))
@@ -251,20 +254,20 @@ def run():
 #     print(len(events[0]))
 #     print(len(events[1]))
 #     mat[events[0].astype('i'), events[1].astype('i')] = 1
-    
 
-
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

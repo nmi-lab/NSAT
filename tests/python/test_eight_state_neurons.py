@@ -18,6 +18,7 @@ import time
 
 sim_ticks = 500                 # Total simulation time
 
+
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
     SL = pyST.SpikeList(id_list=list(range(N_NEURONS)))
@@ -29,7 +30,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     pyST.STCreate.seed(130)         # pyNCSre random number generator
     np.random.seed(30)              # Numpy random number generator
 
@@ -85,7 +87,7 @@ def setup():
     # Bias
     cfg.core_cfgs[0].b[0] = np.array([0, 0, 0, 0, 0, 0, 0, 0], 'int')
     # Initiali conditions
-    cfg.core_cfgs[0].Xinit[0] = np.array([[0]*8 for _ in range(N_NEURONS[0])],
+    cfg.core_cfgs[0].Xinit[0] = np.array([[0] * 8 for _ in range(N_NEURONS[0])],
                                          'int')
     # Reset value
     cfg.core_cfgs[0].Xreset[0] = np.array([0, 0, 0, 0, 0, 0, 0, 0], 'int')
@@ -135,7 +137,7 @@ def run():
     # Call the C NSAT
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
     cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
-    
+
     nsat.run_c_nsat()
 
     # Load the results (read binary files)
@@ -143,7 +145,7 @@ def run():
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
-    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events + '_core_0.dat'),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
@@ -151,19 +153,21 @@ def run():
     fig = plt.figure(figsize=(10, 10))
     for i in range(1, 9):
         ax = fig.add_subplot(8, 1, i)
-        ax.plot(states_core0[:, 0, i-1], 'b', lw=2)
-        
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+        ax.plot(states_core0[:, 0, i - 1], 'b', lw=2)
+
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-    
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
-    
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

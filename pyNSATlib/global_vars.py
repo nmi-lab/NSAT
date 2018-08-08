@@ -1,13 +1,13 @@
 from ctypes import Structure, c_char_p
 
 # Limits
-XMAX = MAX = 2**15-1
+XMAX = MAX = 2**15 - 1
 XMIN = -2**15
-MIN = -2**15+1
+MIN = -2**15 + 1
 OFF = -16
 WMAX = 128
 CHANNEL_OFFSET = 18
-ADDR_MASK = 2**CHANNEL_OFFSET-1
+ADDR_MASK = 2**CHANNEL_OFFSET - 1
 N_TOT = 2048
 OFF = -16
 TSTDPMAX = 1023
@@ -21,7 +21,7 @@ is the fastest, lzma is the smallest, bz2 is in-between.  Gzip is within epsilon
 of _pickle run time but with 10x smaller file size, probably good enough.  Lzma 
 file size is within epsilon of _pickle, but run time is 10x slower (still very
 small in absolute terms).
-""" 
+"""
 # import lzma
 # compression_strategy = lzma.open
 # import bz2
@@ -48,15 +48,15 @@ FNAME_FIELDS = ['nsat_params_map',
                 'shared_mem',
                 'pickled']
 
-    
+
 class c_nsat_fnames(Structure):
     """ fnames class implements the C struct: fnames. Contains the
         filenames of all the necessary input files.
     """
     _fields_ = [(s, c_char_p) for s in FNAME_FIELDS]
-    
+
     def __init__(self, fname=None):
-#         self._fields = [(s, c_char_p) for s in FNAME_FIELDS]
+        #         self._fields = [(s, c_char_p) for s in FNAME_FIELDS]
         if fname is not None:
             for f in fname._fields:
                 setattr(self, f, getattr(fname, f).encode('utf-8'))
@@ -76,6 +76,7 @@ def generate_c_fnames(fname=None):
     return c_fnames
 '''
 
+
 class nsat_fnames(object):
     """ fnames class implements the C struct: fnames. Contains the
         filenames of all the necessary input files.
@@ -85,7 +86,7 @@ class nsat_fnames(object):
     def __init__(self):
         for f in self._fields:
             setattr(self, f, '')
-            
+
     def generate(self, path):
         fname = self
         fname.nsat_params_map = path + '_nsat_params_map.dat'

@@ -17,24 +17,25 @@ N_LRNGROUPS = 8
 
 rN_STATES = list(range(N_STATES))             # Number of states per neuron
 rN_GROUPS = list(range(N_GROUPS))             # Number of parameters groups
-rN_LRNGROUPS = list(range(N_LRNGROUPS))       # Number of learning parameters groups
+# Number of learning parameters groups
+rN_LRNGROUPS = list(range(N_LRNGROUPS))
 
 # Limits
-MAX = 2**15-1
-MIN = -2**15+1
+MAX = 2**15 - 1
+MIN = -2**15 + 1
 OFF = -16
 
 # NSAT Dynamics parameters
-A = np.array([[[OFF]*N_STATES for _ in rN_STATES] for _ in rN_GROUPS])
-sA = np.array([[[-1]*N_STATES for _ in rN_STATES] for _ in rN_GROUPS])
+A = np.array([[[OFF] * N_STATES for _ in rN_STATES] for _ in rN_GROUPS])
+sA = np.array([[[-1] * N_STATES for _ in rN_STATES] for _ in rN_GROUPS])
 b = np.array([[0 for _ in rN_STATES] for _ in rN_GROUPS])
 
 # Initial conditions
 Xinit = np.array([0 for _ in rN_STATES])
 
 # Spike and reset parameters
-XresetOn = np.array([[True]+[False for _ in rN_STATES[:-1]]]*N_GROUPS)
-Xreset = np.array([[0]+[MAX for _ in rN_STATES[:-1]] for _ in rN_GROUPS])
+XresetOn = np.array([[True] + [False for _ in rN_STATES[:-1]]] * N_GROUPS)
+Xreset = np.array([[0] + [MAX for _ in rN_STATES[:-1]] for _ in rN_GROUPS])
 XspikeResetVal = np.array([[0 for _ in rN_STATES] for _ in rN_GROUPS])
 XspikeIncrVal = np.array([[0 for _ in rN_STATES] for _ in rN_GROUPS])
 Xth = np.array([MAX for _ in rN_GROUPS])

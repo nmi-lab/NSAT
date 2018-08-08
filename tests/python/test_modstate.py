@@ -25,7 +25,8 @@ matplotlib.rcParams['axes.formatter.limits'] = [-10, 10]
 matplotlib.rcParams['figure.subplot.bottom'] = .2
 
 sim_ticks = 1000        # Number of simulation ticks
-SL = None 
+SL = None
+
 
 def SimSpikingStimulus(stim, time=1000, t_sim=None):
     '''
@@ -43,7 +44,8 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
 
 def setup():
     global SL
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
 
     N_CORES = 1             # Number of cores
     N_NEURONS = [1]         # Number of neurons per core (list)
@@ -94,7 +96,7 @@ def setup():
     cfg.core_cfgs[0].Xth[0] = 25000
     # Initial conditions
     cfg.core_cfgs[0].Xinit[0] = np.array([[0, 0, 0, 0] for _
-                                         in range(N_NEURONS[0])],
+                                          in range(N_NEURONS[0])],
                                          'int')
     # Reset value
     cfg.core_cfgs[0].Xreset[0] = np.array([0, MAX, MAX, MAX], 'int')
@@ -145,7 +147,7 @@ def setup():
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT
@@ -161,7 +163,7 @@ def run():
     # wt = c_nsat_reader.read_c_nsat_weights_evo(0)[:, 1, 1]
     wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[0])
     in_spikelist = SL
-    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events + '_core_0.dat'),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
@@ -200,17 +202,19 @@ def run():
     ax.set_xticks([])
     plt.locator_params(axis='y', nbins=4)
 
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

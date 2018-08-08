@@ -16,6 +16,7 @@ from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
 import time
 
+
 def read_states_hex(fname):
     states = []
     with open(fname, 'r') as f:
@@ -39,7 +40,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     np.random.seed(30)          # Numpy RNG seed
     sim_ticks = 5000            # Simulation ticks
     N_CORES = 1                 # Number of cores
@@ -160,18 +162,20 @@ def run():
         ax = fig.add_subplot(10, 1, i)
         ax.plot(states_core0[:200, i, 0], 'b', lw=3)
         ax.set_ylim([0, 110])
-    
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))

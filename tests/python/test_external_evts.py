@@ -16,6 +16,7 @@ from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
 import time
 
+
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
     SL = pyST.SpikeList(id_list=list(range(N_NEURONS)))
@@ -29,7 +30,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 def setup():
-    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:setup()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     np.random.seed(30)          # Numpy random number generator seed
     sim_ticks = 5000            # Total simulation time
     N_CORES = 2                 # Number of cores
@@ -131,7 +133,7 @@ def setup():
     # Generate external events firing rates from 5 to 50 inc by 5
     freqs = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
     SL = []
-    for i in range(N_CORES-1):
+    for i in range(N_CORES - 1):
         SL.append(RegularSpikingStimulus(freqs, sim_ticks))
     ext_evts_data = nsat.exportAER(SL)
 
@@ -142,7 +144,7 @@ def setup():
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',
                                       prefix='test_external_evts')
     c_nsat_writer.write()
-    
+
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
 
@@ -171,17 +173,19 @@ def run():
         ax.plot(states_core1[:500, i, 0], 'b', lw=3)
         ax.set_ylim([0, 110])
 
-    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
-       
+
+
 if __name__ == '__main__':
-    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:main()' %
+          (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = time.perf_counter()
-    
+
     setup()
     run()
-    
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
- 
+
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
+        os.path.basename(__file__))[0], time.perf_counter() - start_t))
