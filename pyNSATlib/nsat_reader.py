@@ -6,7 +6,6 @@ import struct as st
 import time
 
 def read_from_file(fname):
-#     import struct as st
     try:
         with open(fname, "rb") as f:
             cont = f.read()
@@ -15,8 +14,8 @@ def read_from_file(fname):
     except:
         print('nsat_reader:read_from_file %s file not found or unreadable' % fname)
 
+
 def read_from_file_weights(fname):
-#     import struct as st
     with open(fname, "rb") as f:
         cont = f.read()
     size = int(len(cont) // 4)
@@ -47,156 +46,6 @@ class C_NSATReader(NSATReader):
     def read_config(self):
         self.cfg = nsat.ConfigurationNSAT.readfileb(self.fname.pickled)
         return self.cfg
-#         with lzma.open(self.fname.pickled, 'wb') as fh:
-#             self.cfg = nsat.ConfigurationNSAT.readb(fh)
-    
-#     @staticmethod
-#     def unpack(data, typ='i'):
-# #         data = np.array(data).flatten()
-#         s = struct.unpack(typ * data.shape[0], *data.astype(typ))
-#         return s
-# '''
-#     def read_corecfgs(self):
-# '''        '''
-#         Write all parameters for c_nsat simulations
-#         *inputs*: fnames
-#         *outputs*: None
-# '''        '''
-#         self.cfg = cfg = nsat.ConfigurationNSAT()
-#         
-#         with open(self.fname.params, 'rb') as fh:
-#             # Global parameters
-#             cfg.N_CORES, = struct.unpack('i', fh.readline())
-# #             fh.read(unpack(cfg.N_CORES, 'i'))
-#             cfg.single_core, = struct.unpack('?', fh.readline())
-# #             fh.read(unpack(cfg.single_core, '?'))
-# #             if len(cfg.L1_connectivity) != 0:
-# #                 cfg.routing_en = True
-#             cfg.routing_en, = struct.unpack('?', fh.readline())
-# #             fh.read(unpack(cfg.routing_en, '?'))
-#             cfg.sim_ticks, = struct.unpack('i', fh.readline())
-# #             fh.read(unpack(cfg.sim_ticks, 'i'))
-#             cfg.seed, = struct.unpack('i', fh.readline())
-# #             fh.read(unpack(cfg.seed, 'i'))
-#             cfg.s_seq, = struct.unpack('i', fh.readline())
-# #             fh.read(unpack(cfg.s_seq, 'i'))
-#             cfg.is_bm_rng_on, = struct.unpack('?', fh.readline())
-# #             fh.read(unpack(cfg.is_bm_rng_on, '?'))
-#             cfg.is_clock_on, = struct.unpack('?', fh.readline())
-# #             fh.read(unpack(cfg.is_clock_on, '?'))
-#             cfg.w_check, = struct.unpack('?', fh.readline())
-# #             fh.read(unpack(cfg.w_check, '?'))
-#             cfg.w_boundary, = struct.unpack('i', fh.readline())
-# #             fh.read(unpack(cfg.w_boundary, 'i'))
-# 
-#             # Core parameters
-#             for p, core_cfg in cfg:
-#                 fh.read(unpack(cfg.ext_evts, '?'))
-# #                if ( p < cfg.plasticity_en.size ):
-#                 try:
-#                     fh.read(unpack(cfg.plasticity_en[p], '?'))
-# #                else: fh.read(bytes('cfgplasticity_en[p] OOB','utf-8'))
-#                 except: fh.read(bytes('cfgplasticity_en[p] OOB','utf-8'))
-#                 try:
-#                     fh.read(unpack(cfg.gated_learning[p], '?'))
-#                 except: fh.read(bytes('cfgggated_lerning_en[p] OOB','utf-8'))
-#                 fh.read(unpack(core_cfg.n_inputs, 'i'))
-#                 fh.read(unpack(core_cfg.n_neurons, 'i'))
-#                 fh.read(unpack(core_cfg.n_states, 'i'))
-#                 fh.read(unpack(core_cfg.n_groups, 'i'))
-#                 fh.read(unpack(core_cfg.n_lrngroups, 'i'))
-#                 fh.read(unpack(cfg.rec_deltat, 'i'))
-#                 fh.read(unpack(cfg.num_syn_ids_rec[p], 'i'))
-#                 fh.read(unpack(cfg.syn_ids_rec[p], 'i'))
-# 
-#             # NSAT parameters
-#             for p, core_cfg in cfg:
-#                 for j in range(core_cfg.n_groups):
-#                     fh.read(unpack(core_cfg.gate_lower[j], 'i'))
-#                     fh.read(unpack(core_cfg.gate_upper[j], 'i'))
-#                     fh.read(unpack(core_cfg.learn_period[j], 'i'))
-#                     fh.read(unpack(core_cfg.learn_burnin[j], 'i'))
-#                     fh.read(unpack(core_cfg.t_ref[j], 'i'))
-#                     fh.read(unpack(core_cfg.modstate[j], 'i'))
-#                     fh.read(unpack(core_cfg.prob_syn[j], 'i'))
-#                     fh.read(unpack(core_cfg.A[j].T, 'i'))
-#                     fh.read(unpack(core_cfg.sA[j].T, 'i'))
-#                     fh.read(unpack(core_cfg.b[j], 'i'))
-#                     fh.read(unpack(core_cfg.Xreset[j], 'i'))
-#                     fh.read(unpack(core_cfg.Xthlo[j], 'i'))
-#                     fh.read(unpack(core_cfg.XresetOn[j], '?'))
-#                     fh.read(unpack(core_cfg.Xthup[j], 'i'))
-#                     fh.read(unpack(core_cfg.XspikeIncrVal[j], 'i'))
-#                     fh.read(unpack(core_cfg.sigma[j], 'i'))
-#                     fh.read(unpack(core_cfg.flagXth[j], '?'))
-#                     fh.read(unpack(core_cfg.Xth[j], 'i'))
-#                     fh.read(unpack(core_cfg.Wgain[j], 'i'))
-# 
-#                 fh.read(unpack(core_cfg.Xinit.flatten(), 'i'))
-#                 fh.read(unpack(np.shape(cfg.spk_rec_mon[p])[0], 'i'))
-#                 fh.read(unpack(cfg.spk_rec_mon[p], 'i'))
-# 
-#             # Learning parameters
-#             for p, core_cfg in cfg:
-#                 try:
-#                     if cfg.plasticity_en[p]:
-#                         fh.read(unpack(cfg.tstdpmax[p], 'i'))
-#                         for j in range(core_cfg.n_lrngroups):
-#                             fh.read(unpack(core_cfg.tstdp[j], 'i'))
-#                             fh.read(unpack(core_cfg.plastic[j], '?'))
-#                             fh.read(unpack(core_cfg.stdp_en[j], '?'))
-#                             fh.read(unpack(core_cfg.is_stdp_exp_on[j], '?'))
-#                             fh.read(pack(core_cfg.tca[j], 'i'))
-#                             fh.read(pack(core_cfg.hica[j], 'i'))
-#                             fh.read(pack(core_cfg.sica[j], 'i'))
-#                             fh.read(pack(core_cfg.slca[j], 'i'))
-#                             fh.read(pack(core_cfg.tac[j], 'i'))
-#                             fh.read(pack(core_cfg.hiac[j], 'i'))
-#                             fh.read(pack(core_cfg.siac[j], 'i'))
-#                             fh.read(pack(core_cfg.slac[j], 'i'))
-#                             fh.read(pack(core_cfg.is_rr_on[j], '?'))
-#                             fh.read(pack(core_cfg.rr_num_bits[j], 'i'))
-#                 except: fh.read(bytes('%d does not exist'.format(p),'utf-8'))
-#             # Monitor parameters
-#             # TODO: Separately for every core
-#             for p, core_cfg in cfg:
-#                 fh.read(pack(cfg.monitor_states, '?'))
-#                 fh.read(pack(cfg.monitor_weights, '?'))
-#                 fh.read(pack(cfg.monitor_weights_final, '?'))
-#                 fh.read(pack(cfg.monitor_spikes, '?'))
-#                 fh.read(pack(cfg.monitor_stats, '?'))
-# 
-#             """ The following generates the mapping function.
-#                 For now this is a vector with numbers in [0, 8),
-#                 and every element corresponds to a NSAT neuron
-#                 unit.
-#                 Example:
-#                     If the user would like to have three (3)
-#                     different parameters groups for 30 neurons
-#                     then they have to do the following:
-#                     nmap = np.zeros((num_neurons, dtype='i'))
-#                     nmap[10:20] = 1
-#                     nmap[20:30] = 2
-#                     Of course one can mix the parameters and
-#                     neurons but it's not recommended.
-#             """
-# 
-#             # nmap = np.zeros((num_neurons, ), dtype='i')
-#         with open(self.fname.nsat_params_map, 'rb') as f:
-#             for p, core_cfg in cfg:
-#                 f.read(pack(core_cfg.nmap, 'i'))
-# 
-#         # nmap = np.zeros((num_neurons, ), dtype='i')
-#         with open(self.fname.lrn_params_map, 'rb') as f:
-#             for p, core_cfg in cfg:
-#                 lrnmap_unrolled = np.zeros(
-#                     [core_cfg.n_neurons, core_cfg.n_states], dtype='int')
-#                 for i in range(core_cfg.n_neurons):
-#                     lrnmap_unrolled[i, :] = core_cfg.lrnmap[
-#                         core_cfg.nmap[i], :]
-#                 lrnmap_unrolled = lrnmap_unrolled.flatten()
-#                 f.read(pack(lrnmap_unrolled, 'i'))
-# '''
 
     def read_synaptic_weights(self, return_cw=False):
         '''
@@ -310,13 +159,12 @@ class C_NSATReader(NSATReader):
         return T, S
 
     def read_spikelist(self, sim_ticks=None, id_list=None, core=0):
-        from NSATlib import importAER
         if sim_ticks is None:
             sim_ticks = self.cfg.sim_ticks
         if id_list is None:
             id_list = self.cfg.spk_rec_mon[core]
         filename = self.fname.events + '_core_{0}.dat'.format(core)
-        spikelist = importAER(self.read_events(
+        spikelist = nsat.importAER(self.read_events(
             core), sim_ticks=sim_ticks, id_list=id_list)
         return spikelist
 

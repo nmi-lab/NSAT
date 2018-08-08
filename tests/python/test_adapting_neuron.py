@@ -125,7 +125,4 @@ if __name__ == '__main__':
     setup()
     run()
 
-#     filenames = setup()
-#     run(filenames)
-    
     print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
