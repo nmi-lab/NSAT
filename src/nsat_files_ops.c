@@ -98,9 +98,10 @@ void get_external_events_per_core(FILE *fp, nsat_core **core,
     }
 }
 
+extern pthread_mutex_t lock;
 
 #if DAVIS == 1
-void get_davis_events(int fd, nsat_core **cores) {
+void get_davis_events(int fd, nsat_core **core) {
     int i, time, num_events, n;
     int buffer, core_id, neuron_id;
 
@@ -143,9 +144,13 @@ void get_davis_events(int fd, nsat_core **cores) {
                     nanosleep(&tm, &tm);
                 }
                 neuron_id = buffer;
-                array_list_push(&(*cores)[core_id].ext_events, neuron_id,
-                                (*cores)[core_id].curr_time, 1);
-                (*cores)[core_id].ext_neuron[neuron_id].counter = time;
+                pthread_mutex_lock(&lock);
+                if (core_id == (*core)->core_id) {
+                    array_list_push(&(*core)->ext_events, neuron_id,
+                                    (*core)->curr_time, 1);
+                    (*core)->ext_neuron[neuron_id].counter = time;
+                }
+                pthread_mutex_unlock(&lock);
             }
             break;
         } else if (n < 0) {

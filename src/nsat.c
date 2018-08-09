@@ -983,6 +983,17 @@ void *nsat_thread(void *args)
 
     nsat_core *core = (nsat_core *)args;
     clock_t t_s, t_f;
+#if DAVIS == 1
+    int fd;
+    if (core->core_pms.is_ext_evts_on) {
+        fd = open(core->ext_evts_fname, O_RDONLY);
+        if (fd < 0) {
+            printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
+            printf("No external events file for Core %u !\n", core->core_id);
+            exit(-1);
+        }
+    }
+#else
     FILE *fext;
 
     if (core->core_pms.is_ext_evts_on) {
@@ -992,12 +1003,20 @@ void *nsat_thread(void *args)
             printf("No external events file for Core %u !\n", core->core_id);
         }
     }
+#endif
 
+#if DAVIS == 1
+    for(t = 1; t < core->g_pms->ticks; ++t) {
+        if (core->core_pms.is_ext_evts_on) {
+            get_davis_events(fd, &core);
+        }
+#else
     t_s = clock();
     for (t = 1; t < core->g_pms->ticks; ++t) {
         if (core->core_pms.is_ext_evts_on) {
             get_external_events_per_core(fext, &core, t);
         }
+#endif
 
         core->curr_time = t;
         nsat_dynamics((void *)&core[0]);
@@ -1007,7 +1026,7 @@ void *nsat_thread(void *args)
         if (core->g_pms->is_routing_on) {
             pthread_mutex_lock(&lock);
             for (q = 0 ; q < shared_[core->core_id].units->length; ++q) {
-                array_list_push(&core->ext_events,
+    ;            array_list_push(&core->ext_events,
                                 shared_[core->core_id].units->array[q], t, 1);
             }
             pthread_mutex_unlock(&lock);
@@ -1021,9 +1040,15 @@ void *nsat_thread(void *args)
     printf("Thread %u execution time: %lf seconds\n",
            core->core_id, (double) (t_f - t_s) / CLOCKS_PER_SEC);
 
+#if DAVIS == 1
+    if (core->core_pms.is_ext_evts_on && fd > 0) {
+        (void) close(fd);
+    }
+#else
     if (core->core_pms.is_ext_evts_on && fext!=NULL) {
         fclose(fext);
     }
+#endif
 
     return NULL;
 }

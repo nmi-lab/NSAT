@@ -526,30 +526,24 @@ class ConfigurationNSAT(object):
                 plasticity_en))
             self.plasticity_en = np.array([plasticity_en] * N_CORES, 'bool')
         else:
-            self.plasticity_en = np.array(plasticity_en, 'bool')
-        # if len(plasticity_en) != N_CORES:
-        #     print("All the cores receive the same learning flag ({0})!".format(
-        #         plasticity_en))
-        #     self.plasticity_en = np.array([plasticity_en] * N_CORES, 'bool')
-        # else:
-        #     self.plasticity_en = np.array(plasticity_en, 'bool')
+            if plasticity_en.shape[0] != N_CORES:
+                self.plasticity_en = np.tile(plasticity_en,
+                                             N_CORES).astype('bool')
+            else:
+                self.plasticity_en = np.array(plasticity_en, 'bool')
 
         assert(hasattr(self.plasticity_en, '__len__'))
 
         if not hasattr(gated_learning, '__len__'):
             print("All the cores receive the same gated learning flag ({0})!".format(
                 gated_learning))
-            self.gated_learning = np.array(
-                [gated_learning for _ in range(N_CORES)], 'bool')
+            self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
         else:
-            self.gated_learning = np.array(gated_learning, dtype='bool')
-        # if len(gated_learning) != N_CORES:
-        #     print("All the cores receive the same gated learning flag ({0})!".format(
-        #         gated_learning))
-        #     self.gated_learning = np.array(
-        #         [gated_learning for _ in range(N_CORES)], 'bool')
-        # else:
-        #     self.gated_learning = np.array(gated_learning, dtype='bool')
+            if gated_learning.shape[0] != N_CORES:
+                self.gated_learning = np.tile(gated_learning,
+                                              N_CORES).astype('bool')
+            else:
+                self.gated_learning = np.array(gated_learning, dtype='bool')
 
         assert not hasattr(
             monitor_states, '__len__'), "Monitors are System Wide"
@@ -565,7 +559,8 @@ class ConfigurationNSAT(object):
         self.monitor_weights = monitor_weights  # Enabled on write_hex
         assert not hasattr(monitor_weights_final,
                            '__len__'), "Monitors are System Wide"
-        self.monitor_weights_final = monitor_weights_final  # Enabled on write_hex
+        # Enabled on write_hex
+        self.monitor_weights_final = monitor_weights_final
 
         self.s_seq = s_seq
         self.w_boundary = w_boundary

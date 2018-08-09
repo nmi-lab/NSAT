@@ -67,15 +67,6 @@ class c_nsat_fnames(Structure):
 #                 setattr(self, f, getattr(fname, f).encode('utf-8'))
 #         return self
 
-'''    
-def generate_c_fnames(fname=None):
-    c_fnames = c_nsat_fnames()
-    if fname is not None:
-        for f in fname.fields:
-            setattr(c_fnames, f, getattr(fname, f).encode('utf-8'))
-    return c_fnames
-'''
-
 
 class nsat_fnames(object):
     """ fnames class implements the C struct: fnames. Contains the
@@ -108,26 +99,4 @@ class nsat_fnames(object):
         fname.pickled = path + '_pickled_config'
         return fname
 
-'''
-def generate_default_fnames(path):
-    fname = nsat_fnames()
-    fname.nsat_params_map = path + "_nsat_params_map.dat"
-    fname.lrn_params_map = path + "_lrn_params_map.dat"
-    fname.params = path + "_params.dat"
-    fname.syn_wgt_table = path + "_wgt_table"
-    fname.syn_ptr_table = path + "_ptr_table"
-    fname.ext_events = path + "_ext_events"
-    fname.synw = path + "_weights"
-    fname.synw_final = path + "_weights_final"
-    fname.events = path + "_events"
-    fname.states = path + "_states"
-    fname.check_pms = path + "_cpms.dat"
-    fname.stdp_fun = path + "_stdp_fun.dat"
-    fname.stats_nsat = path + "_stats_nsat"
-    fname.stats_ext = path + "_stats_ext"
-    fname.l1_conn = path + "_l1_conn.dat"
-    fname.shared_mem = path + "_shared_mem"
-    fname.pickled = path + '_pickled_config'
-    return fname
-'''
 fnames = nsat_fnames()

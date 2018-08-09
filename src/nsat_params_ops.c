@@ -234,7 +234,7 @@ void read_core_params(FILE *fp, nsat_core *core, int num_cores) {
         fread_test(res, 1);
         if (core[p].core_pms.num_learning_pms_groups > N_LRNGROUPS) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-            printf("CORE #%d: Invalid number of NSAT parameters groups!\n", p);
+            printf("CORE #%d: Invalid number of NSAT learning parameters groups!\n", p);
             exit(-1);
         }
 

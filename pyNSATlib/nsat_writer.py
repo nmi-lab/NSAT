@@ -121,10 +121,8 @@ class C_NSATWriter(NSATWriter):
             # Core parameters
             for p, core_cfg in cfg:
                 fh.write(pack(cfg.ext_evts, '?'))
-#                if ( p < cfg.plasticity_en.size ):
                 try:
                     fh.write(pack(cfg.plasticity_en[p], '?'))
-#                else: fh.write(bytes('cfgplasticity_en[p] OOB','utf-8'))
                 except:
                     fh.write(bytes('cfgplasticity_en[p] OOB', 'utf-8'))
                 try:
