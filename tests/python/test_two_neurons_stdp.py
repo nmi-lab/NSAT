@@ -14,7 +14,7 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
-import time
+import timeit
 
 # Globals
 sim_ticks = 500             # Simulation ticks
@@ -33,9 +33,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
 
 
 def setup():
-    print('Begin %s:setup()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     N_CORES = 1                 # Number of cores
     N_NEURONS = [2]             # Number of neurons per core
     N_INPUTS = [1]              # Number of inputs per core
@@ -150,10 +149,10 @@ def setup():
     c_nsat_writer.write()
 
     # Write Intel FPGA parameters hex files
-# intel_fpga_writer = nsat.IntelFPGAWriter(cfg, path='.',
-# prefix='test_two_neurons_stdp')
-# intel_fpga_writer.write()
-# intel_fpga_writer.write_globals()
+##    intel_fpga_writer = nsat.IntelFPGAWriter(cfg, path='.',
+##                                             prefix='test_two_neurons_stdp')
+##    intel_fpga_writer.write()
+##    intel_fpga_writer.write_globals()
 
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
@@ -170,7 +169,7 @@ def run():
     time_core0, states_core0 = states[0][0], states[0][1]
     wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[2])
     wt = wt[0]
-    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events + '_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks, id_list=[0])
 
     # Plot the results
@@ -214,20 +213,18 @@ def run():
         plt.axvline(i, color='k', lw=1)
     for i in out_spikelist[1].spike_times:
         plt.axvline(i, color='b', lw=1)
-
-    plt.savefig('/tmp/%s.png' %
-                (os.path.splitext(os.path.basename(__file__))[0]))
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-
-
+    
+       
 if __name__ == '__main__':
-    print('Begin %s:main()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-    start_t = time.perf_counter()
-
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
     setup()
     run()
-
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
-        os.path.basename(__file__))[0], time.perf_counter() - start_t))
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

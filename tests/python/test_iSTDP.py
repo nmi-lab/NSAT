@@ -13,14 +13,12 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
-import time
+import timeit
 
 sim_ticks = 500            # Simulation time
 
-
 def setup():
-    print('Begin %s:setup()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
     N_CORES = 1                 # Number of cores
     N_NEURONS = [2]             # Number of neurons per core
@@ -173,7 +171,7 @@ def run():
     wt, _ = c_nsat_reader.read_c_nsat_weights_evo([0, 1])
     wt = wt[0]
 
-    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events + '_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks)
 
     # Plot the results
@@ -215,23 +213,21 @@ def run():
     plt.plot(wt[:, 0, 1], 'r', lw=2, zorder=10)
     plt.plot(wt[:, 1, 1], 'y', lw=2, zorder=10)
     # for i in out_spikelist[0].spike_times:
-    # plt.axvline(i, color='k', lw=1, zorder=0)
+        # plt.axvline(i, color='k', lw=1, zorder=0)
     # for i in out_spikelist[1].spike_times:
-    # plt.axvline(i, color='b', lw=1, zorder=0)
-
-    plt.savefig('/tmp/%s.png' %
-                (os.path.splitext(os.path.basename(__file__))[0]))
+        # plt.axvline(i, color='b', lw=1, zorder=0)
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-
-
+    
+       
 if __name__ == '__main__':
-    print('Begin %s:main()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-    start_t = time.perf_counter()
-
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
     setup()
     run()
-
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
-        os.path.basename(__file__))[0], time.perf_counter() - start_t))
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

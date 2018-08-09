@@ -13,13 +13,11 @@ import numpy as np
 import matplotlib.pylab as plt
 import pyNSATlib as nsat
 import os
-import time
-
+import timeit
 
 def setup():
-    print('Begin %s:setup()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     # sim_ticks = 10000             # Simulation time
     sim_ticks = 1000             # Simulation time
     N_CORES = 5                 # Number of cores
@@ -81,9 +79,9 @@ def setup():
 
     # Write C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',
-                                      prefix='test_multithread')
+            prefix='test_multithread')
     c_nsat_writer.write()
-
+    
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
 
@@ -102,21 +100,19 @@ def run():
     fig = plt.figure(figsize=(10, 10))
     for i in range(1, 5):
         ax = fig.add_subplot(4, 1, i)
-        ax.plot(states_core0[:-1, 0, i - 1], 'b', lw=3)
-
-    plt.savefig('/tmp/%s.png' %
-                (os.path.splitext(os.path.basename(__file__))[0]))
+        ax.plot(states_core0[:-1, 0, i-1], 'b', lw=3)
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-
-
+    
+       
 if __name__ == '__main__':
-    print('Begin %s:main()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-    start_t = time.perf_counter()
-
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
     setup()
     run()
-
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
-        os.path.basename(__file__))[0], time.perf_counter() - start_t))
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

@@ -14,14 +14,13 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
-import time
+import timeit
 
 # Globals
 sim_ticks = 60000           # Simulation ticks
 SL = None
 t_start = 0
 t_stop = 25000
-
 
 def SimSpikingStimulus(rates=[5, 10], t_start=1000, t_stop=4000):
     n = np.shape(rates)[0]
@@ -36,7 +35,7 @@ def SimSpikingStimulus(rates=[5, 10], t_start=1000, t_stop=4000):
 
 
 def h(x, sigma=1):
-    return np.exp(-(x)**2 / (2 * sigma**2))
+    return np.exp(-(x)**2/(2*sigma**2))
 
 
 def lateral_connectivity(n):
@@ -95,8 +94,8 @@ def pretty_fig(spks, states, t_stop=1000):
             al = 1
         else:
             col = (0.847, 0, 0.329)
-            al = 1 - i * 0.2
-        ax1.plot(spikes[i, :K] + i, '|', c=col, ms=20, mew=3, alpha=al)
+            al = 1 - i*0.2
+        ax1.plot(spikes[i, :K]+i, '|', c=col, ms=20, mew=3, alpha=al)
 
     ax1.set_ylim([0, 5])
     ax1.set_xticks([])
@@ -115,9 +114,9 @@ def pretty_fig(spks, states, t_stop=1000):
             al = 1
         else:
             col = (0.847, 0, 0.329)
-            al = 0.2 + i * 0.2
+            al = 0.2 + i*0.2
         ax2 = plt.subplot2grid((5, 5), (i, 0), colspan=5, rowspan=1)
-        ax2.plot(states[:K, 4 - i, 0], c=col, alpha=al)
+        ax2.plot(states[:K, 4-i, 0], c=col, alpha=al)
         ax2.set_ylim([-500, 200])
         ax2.set_yticklabels(ax2.get_yticks().astype('i'),
                             fontsize=18,
@@ -140,9 +139,8 @@ def pretty_fig(spks, states, t_stop=1000):
 
 def setup():
     global SL, t_start, t_stop
-    print('Begin %s:setup()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     N_CORES = 1                 # Number of cores
     N_NEURONS = [4]             # Number of neurons per core
     N_INPUTS = [3]              # Number of inputs per core
@@ -262,19 +260,17 @@ def run():
     spks = np.vstack([spks[0], spks[1]]).astype('int')
     pretty_fig(spks, states_core0, t_stop=t_stop)
 
-    plt.savefig('/tmp/%s.png' %
-                (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-
-
+    
+       
 if __name__ == '__main__':
-    print('Begin %s:main()' %
-          (os.path.splitext(os.path.basename(__file__))[0]))
-    start_t = time.perf_counter()
-
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
     setup()
     run()
-
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(
-        os.path.basename(__file__))[0], time.perf_counter() - start_t))
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 
