@@ -5,6 +5,7 @@ import pyNSATlib as nsat
 import struct as st
 import time
 
+
 def read_from_file(fname):
     try:
         with open(fname, "rb") as f:
@@ -42,7 +43,7 @@ class NSATReader(object):
 
 
 class C_NSATReader(NSATReader):
-    
+
     def read_config(self):
         self.cfg = nsat.ConfigurationNSAT.readfileb(self.fname.pickled)
         return self.cfg
@@ -96,7 +97,7 @@ class C_NSATReader(NSATReader):
             # len_ww = ww.shape[0]
             W = np.zeros((self.cfg.sim_ticks, n_units,
                           core_cfg.n_states), 'i')
-            
+
             if (len(post) == 0):
                 post = range(n_units)
             pre_ids = []
@@ -119,8 +120,9 @@ class C_NSATReader(NSATReader):
             size = len(self.cfg.spk_rec_mon[p]) * core_cfg.n_states + 1
             filename = self.fname.states + '_core_' + str(p) + '.dat'
             tmp = read_from_file(filename)
-            if ( tmp is None ):
-                print('Error nsat_reader:read_states() read_from_file(\'%s\') call returned None' % filename) 
+            if (tmp is None):
+                print(
+                    'Error nsat_reader:read_states() read_from_file(\'%s\') call returned None' % filename)
                 return S
 
             res = np.zeros((self.cfg.sim_ticks, len(self.cfg.spk_rec_mon[p]),

@@ -4,27 +4,26 @@
 # Author: Emre Neftci
 #
 # Creation Date : Fri 22 Jun 2018 12:56:52 PM PDT
-# Last Modified : 
+# Last Modified :
 #
 # Copyright : (c) UC Regents, Emre Neftci
 # Licence : GPLv2
-#----------------------------------------------------------------------------- 
+#-----------------------------------------------------------------------------
 from graph import *
 
 
-            
 class Op(object):
     default_output = None
     # Properties attribute
     __props__ = ()
 
-    #itypes and otypes attributes are
-    #compulsory if make_node method is not defined.
-    #They're the type of input and output respectively
+    # itypes and otypes attributes are
+    # compulsory if make_node method is not defined.
+    # They're the type of input and output respectively
     itypes = None
     otypes = None
 
-    #Compulsory if itypes and otypes are not defined
+    # Compulsory if itypes and otypes are not defined
     def make_node(self, *inputs):
         pass
 
@@ -55,8 +54,10 @@ class Op(object):
             wrapper = self.params_type
             if not all(hasattr(self, field) for field in wrapper.fields):
                 # Let's print missing attributes for debugging.
-                not_found = tuple(field for field in wrapper.fields if not hasattr(self, field))
-                raise AttributeError('%s: missing attributes %s for ParamsType.' % (type(self).__name__, not_found))
+                not_found = tuple(
+                    field for field in wrapper.fields if not hasattr(self, field))
+                raise AttributeError('%s: missing attributes %s for ParamsType.' % (
+                    type(self).__name__, not_found))
             # ParamsType.get_params() will apply filtering to attributes.
             return self.params_type.get_params(self)
         raise Exception('get_params')
@@ -95,7 +96,6 @@ class Op(object):
         return_list = kwargs.pop('return_list', False)
         node = self.make_node(*inputs, **kwargs)
 
-
         if self.default_output is not None:
             rval = node.outputs[self.default_output]
             if return_list:
@@ -108,8 +108,6 @@ class Op(object):
                 return node.outputs[0]
             else:
                 return node.outputs
-
-
 
 
 class Add(Op):
@@ -134,7 +132,8 @@ class Add(Op):
         return i0_shapes
 
     def grad(self, inputs, output_grads):
-        return [output_grads[0],output_grads[0]]
+        return [output_grads[0], output_grads[0]]
+
 
 class Dot(Op):
     # See doc in instance of this Op or function after this class definition.
@@ -189,8 +188,12 @@ class Dot(Op):
 
         return rval
 
+
 class SynapticDenseConnection(Dot):
-    #This should derive from Dot. It is like Dot, but it has a neuromorphic implementation and restricts the types of input and output variables. The first input variable must be a Variable (without any inputs) and the second is a SpikeListType 
+    # This should derive from Dot. It is like Dot, but it has a neuromorphic
+    # implementation and restricts the types of input and output variables.
+    # The first input variable must be a Variable (without any inputs) and the
+    # second is a SpikeListType
     pass
 
 add = Add()
@@ -199,6 +202,7 @@ dot = Dot()
 
 class Sigmoid(Op):
     __props__ = ()
+
     def __str__(self):
         return "ElementWise" + self.__class__.__name__
 
@@ -211,28 +215,28 @@ class Sigmoid(Op):
     def perform(self, node, inputs, output_storage):
         x = inputs[0]
         z = output_storage[0]
-        z[0] = 1./(1+np.exp(-x))
+        z[0] = 1. / (1 + np.exp(-x))
 
     def infer_shape(self, node, i0_shapes):
         return i0_shapes
 
     def grad(self, inputs, output_grads):
         x = inputs[0]
-        out = 1./(1+np.exp(-x))
-        return [dot(output_grads[0],out*(1-out))]
+        out = 1. / (1 + np.exp(-x))
+        return [dot(output_grads[0], out * (1 - out))]
 
-##TODO
-#Implement gradient function
-#Add spike stream data type
-#Extract a simple compiler/scheduler/linker from theano for python implementation
-#Understand how alternate implementations are used 
+# TODO
+# Implement gradient function
+# Add spike stream data type
+# Extract a simple compiler/scheduler/linker from theano for python implementation
+# Understand how alternate implementations are used
 
 sigmoid = Sigmoid()
 
 if __name__ == "__main__":
-    W = TensorVariable(type = np.float32)
-    v = TensorVariable(type = np.float32)
-    b = TensorVariable(type = np.float32)
-    u1 = sigmoid(add(dot(W,v),b))
-    u2 = sigmoid(add(dot(W,v),b))
-    x = sigmoid(add(u1,u2))
+    W = TensorVariable(type=np.float32)
+    v = TensorVariable(type=np.float32)
+    b = TensorVariable(type=np.float32)
+    u1 = sigmoid(add(dot(W, v), b))
+    u2 = sigmoid(add(dot(W, v), b))
+    x = sigmoid(add(u1, u2))
