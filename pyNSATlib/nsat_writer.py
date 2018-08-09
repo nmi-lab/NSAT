@@ -14,7 +14,7 @@ import warnings
 import os
 from ctypes import Structure, c_char_p
 from pyNCSre import pyST
-import time
+import timeit
 import pyNSATlib
 from pyNSATlib.utils import *
 from pyNSATlib.global_vars import *
@@ -60,7 +60,7 @@ class NSATWriter(object):
         '''
         
         print('Begin %s:NSATWriter.write()' % (os.path.splitext(os.path.basename(__file__))[0]))
-        start_t = time.perf_counter()
+        start_t = timeit.default_timer()
     
         if not self.cfg.groups_set:
             self.cfg.set_groups()
@@ -71,12 +71,12 @@ class NSATWriter(object):
         if self.cfg.ext_evts:
             self.write_ext_events()
 
-        print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
-        start2_t = time.perf_counter()
+        print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+        start2_t = timeit.default_timer()
         
         self.cfg.writefileb(fnames.pickled)
 
-        print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start2_t))
+        print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start2_t))
 
         if write_weights:
             self.write_L0connectivity()

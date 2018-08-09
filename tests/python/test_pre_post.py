@@ -14,7 +14,7 @@ import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
 import os
-import time
+import timeit
 
 sim_ticks = 200                # Simulation ticks
 
@@ -256,10 +256,10 @@ def run():
        
 if __name__ == '__main__':
     print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    start_t = time.perf_counter()
+    start_t = timeit.default_timer()
     
     setup()
     run()
     
-    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], time.perf_counter()-start_t))
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
  
