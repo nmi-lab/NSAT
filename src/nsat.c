@@ -807,7 +807,7 @@ void nsat_dynamics(nsat_core *core) {
                       core->core_pms.num_neurons, core->core_pms.num_states);
 
 #if DAVIS == 1
-    // write_spikes_events_online(core);
+    write_spikes_events_online(core);
 #endif
 
     /* Check for spikes and resets, and fill out events list */
