@@ -983,17 +983,8 @@ void *nsat_thread(void *args)
 
     nsat_core *core = (nsat_core *)args;
     clock_t t_s, t_f;
-#if DAVIS == 1
-    int fd;
-    if (core->core_pms.is_ext_evts_on) {
-        fd = open(core->ext_evts_fname, O_RDONLY);
-        if (fd < 0) {
-            printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-            printf("No external events file for Core %u !\n", core->core_id);
-            exit(-1);
-        }
-    }
-#else
+
+#if DAVIS == 0
     FILE *fext;
 
     if (core->core_pms.is_ext_evts_on) {
@@ -1005,19 +996,19 @@ void *nsat_thread(void *args)
     }
 #endif
 
+    t_s = clock();
 #if DAVIS == 1
     for(t = 1; t < core->g_pms->ticks; ++t) {
         if (core->core_pms.is_ext_evts_on) {
-            get_davis_events(fd, &core);
+            get_davis_events(core->g_pms->davis_file_id, &core);
         }
 #else
-    t_s = clock();
     for (t = 1; t < core->g_pms->ticks; ++t) {
         if (core->core_pms.is_ext_evts_on) {
             get_external_events_per_core(fext, &core, t);
         }
 #endif
-
+        _pthread_barrier_wait(&barrier);
         core->curr_time = t;
         nsat_dynamics((void *)&core[0]);
 
@@ -1026,7 +1017,7 @@ void *nsat_thread(void *args)
         if (core->g_pms->is_routing_on) {
             pthread_mutex_lock(&lock);
             for (q = 0 ; q < shared_[core->core_id].units->length; ++q) {
-    ;            array_list_push(&core->ext_events,
+                array_list_push(&core->ext_events,
                                 shared_[core->core_id].units->array[q], t, 1);
             }
             pthread_mutex_unlock(&lock);
@@ -1040,11 +1031,7 @@ void *nsat_thread(void *args)
     printf("Thread %u execution time: %lf seconds\n",
            core->core_id, (double) (t_f - t_s) / CLOCKS_PER_SEC);
 
-#if DAVIS == 1
-    if (core->core_pms.is_ext_evts_on && fd > 0) {
-        (void) close(fd);
-    }
-#else
+#if DAVIS == 0
     if (core->core_pms.is_ext_evts_on && fext!=NULL) {
         fclose(fext);
     }
@@ -1123,6 +1110,16 @@ int iterate_nsat(fnames *fname) {
 
     /* Open all necessary monitor files */
     open_cores_monitor_files(cores, fname, g_pms.num_cores);
+
+    /* Open Davis events file (for real-time communication with NSAT) */
+#if DAVIS == 1
+    g_pms.davis_file_id = open(fname->davis_events, O_RDONLY);
+    if (g_pms.davis_file_id < 0) {
+        printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
+        printf("No Davis events file found!\n");
+        exit(-1);
+    }
+#endif
     
     /* Initialize all threads variables */
     cores_t = alloc(pthread_t, g_pms.num_cores);
@@ -1131,7 +1128,6 @@ int iterate_nsat(fnames *fname) {
 
     /* Check if clock is on */
     t0 = clock();
-
     /* Create and run threads (NSAT Cores) */
     for (p = 0; p < g_pms.num_cores; ++p) {
         pthread_create(&cores_t[p], NULL, nsat_thread, (void *)&cores[p]);
@@ -1151,6 +1147,10 @@ int iterate_nsat(fnames *fname) {
 
     pthread_mutex_destroy(&lock);
     _pthread_barrier_destroy(&barrier);
+
+#if DAVIS == 1
+    (void) close(g_pms.davis_file_id);
+#endif
 
     /* Write spikes events */
     write_spikes_events(fname, cores, g_pms.num_cores);

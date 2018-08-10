@@ -36,6 +36,7 @@ FNAME_FIELDS = ['nsat_params_map',
                 'syn_wgt_table',
                 'syn_ptr_table',
                 'ext_events',
+                'davis_events',
                 'synw',
                 'synw_final',
                 'events',
@@ -86,6 +87,7 @@ class nsat_fnames(object):
         fname.syn_wgt_table = path + '_wgt_table'
         fname.syn_ptr_table = path + '_ptr_table'
         fname.ext_events = path + '_ext_events'
+        fname.davis_events = path + '_davis_events'
         fname.synw = path + '_weights'
         fname.synw_final = path + '_weights_final'
         fname.events = path + '_events'

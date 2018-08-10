@@ -133,6 +133,7 @@ struct global_pms_s {
     int rng_init_seq;
     int num_cores;
     int syn_precision;
+    int davis_file_id;
     bool is_single_core;
     bool is_routing_on;
     bool is_bm_rng_on;
@@ -221,6 +222,7 @@ typedef struct fname_s {
     char *syn_wgt_table;
     char *syn_ptr_table;
     char *ext_events;
+    char *davis_events;
     char *synw;
     char *synw_final;
     char *events;

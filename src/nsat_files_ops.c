@@ -98,9 +98,10 @@ void get_external_events_per_core(FILE *fp, nsat_core **core,
     }
 }
 
-extern pthread_mutex_t lock;
 
 #if DAVIS == 1
+extern pthread_mutex_t lock;
+
 void get_davis_events(int fd, nsat_core **core) {
     int i, time, num_events, n;
     int buffer, core_id, neuron_id;
@@ -127,7 +128,7 @@ void get_davis_events(int fd, nsat_core **core) {
                 nanosleep(&tm, &tm);
             }
             num_events = buffer;
-
+            
             for (i = 0; i < num_events; ++i) {
                 n = read(fd, &buffer, sizeof(int));
                 while (n != 4) {

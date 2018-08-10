@@ -16,6 +16,25 @@ import os
 import time
 
 
+def build_davis_file(fname, num_ticks=1000):
+    from struct import pack
+    np.random.seed(100)
+
+    t = np.arange(1, num_ticks).astype('i')
+    core = np.zeros((t.shape[0], ), dtype='i')
+    core[t.shape[0]//2:] = 1
+    evts = np.ones((t.shape[0], ), 'i')
+    neuron = np.array([0, 1, 2, 3], 'i')
+
+    with open(fname, 'wb') as f:
+        for i in range(t.shape[0]):
+            f.write(pack('i', t[i]))
+            f.write(pack('i', evts[i]))
+            for j in range(neuron.shape[0]):
+                f.write(pack('i', core[i]))
+                f.write(pack('i', neuron[j]))
+
+
 def setup():
     print('Begin %s:setup()' %
           (os.path.splitext(os.path.basename(__file__))[0]))
@@ -41,12 +60,12 @@ def setup():
 
     for i in range(N_CORES):
         # Transition matrix
-        cfg.core_cfgs[i].A[0] = [[-1,  OFF],
-                                 [OFF, OFF]]
+        cfg.core_cfgs[i].A[0] = [[-1,  1],
+                                 [-1, OFF]]
 
         # Sign matrix
         cfg.core_cfgs[i].sA[0] = [[-1, 1],
-                                  [1, 1]]
+                                  [-1, 1]]
 
         # Bias
         cfg.core_cfgs[i].b[0] = np.array([50, 0], dtype='int')
@@ -84,6 +103,7 @@ def setup():
     # Write C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_davis')
     c_nsat_writer.write()
+    build_davis_file("/tmp/test_davis_davis_events", num_ticks=sim_ticks)
 
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
