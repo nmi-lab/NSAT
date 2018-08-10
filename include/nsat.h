@@ -73,7 +73,7 @@
 #define XTHUP 32767
 #define XTHLOW -32768
 
-#define DAVIS 0
+#define DAVIS 1
 #define BIT_SHIFT 1
 
 #define ANSI_COLOR_RED     "\x1b[31m"
