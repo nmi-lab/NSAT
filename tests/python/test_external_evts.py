@@ -13,7 +13,8 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
-
+import os
+import timeit
 
 def RegularSpikingStimulus(freqs, ticks=1000):
     N_NEURONS = np.shape(freqs)[0]
@@ -27,7 +28,8 @@ def RegularSpikingStimulus(freqs, ticks=1000):
     return SL
 
 
-if __name__ == '__main__':
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
     np.random.seed(30)          # Numpy random number generator seed
     sim_ticks = 5000            # Total simulation time
     N_CORES = 2                 # Number of cores
@@ -140,13 +142,18 @@ if __name__ == '__main__':
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp',
                                       prefix='test_external_evts')
     c_nsat_writer.write()
+    
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
 
+
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     states_core0 = states[0][1]
     states_core1 = states[1][1]
@@ -164,4 +171,17 @@ if __name__ == '__main__':
         ax.plot(states_core1[:500, i, 0], 'b', lw=3)
         ax.set_ylim([0, 110])
 
-    plt.show()
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

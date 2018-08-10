@@ -13,6 +13,8 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
+import timeit
 
 import matplotlib
 matplotlib.rcParams['text.usetex'] = False
@@ -22,6 +24,8 @@ matplotlib.rcParams['figure.figsize'] = (8.0, 6.0)
 matplotlib.rcParams['axes.formatter.limits'] = [-10, 10]
 matplotlib.rcParams['figure.subplot.bottom'] = .2
 
+sim_ticks = 1000        # Number of simulation ticks
+SL = None 
 
 def SimSpikingStimulus(stim, time=1000, t_sim=None):
     '''
@@ -37,8 +41,10 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
     return SL
 
 
-if __name__ == '__main__':
-    sim_ticks = 1000        # Number of simulation ticks
+def setup():
+    global SL
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+
     N_CORES = 1             # Number of cores
     N_NEURONS = [1]         # Number of neurons per core (list)
     N_INPUTS = [1]          # Number of inputs per core (list)
@@ -97,7 +103,7 @@ if __name__ == '__main__':
                                             'bool')
 
     # STDP kernel height of acausal part
-    cfg.core_cfgs[0].hiac = [[-1, 4, 0] for _ in range(nsat.N_LRNGROUPS)]
+    cfg.core_cfgs[0].hiac = [[-1, 4, 0] for _ in range(8)]
 
     cfg.core_cfgs[0].plastic[0] = True          # Plastic states group 0
     cfg.core_cfgs[0].stdp_en[0] = False         # STDP enabled for group 0
@@ -138,20 +144,24 @@ if __name__ == '__main__':
 #                                             prefix='test_modstate')
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+ 
 
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     states_core0 = states[0][1]
 
     # wt = c_nsat_reader.read_c_nsat_weights_evo(0)[:, 1, 1]
-    wt = c_nsat_reader.read_c_nsat_weights_evo(0)
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[0])
     in_spikelist = SL
-    out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
@@ -190,4 +200,17 @@ if __name__ == '__main__':
     ax.set_xticks([])
     plt.locator_params(axis='y', nbins=4)
 
-    plt.show()
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

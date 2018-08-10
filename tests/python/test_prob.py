@@ -13,8 +13,12 @@ import numpy as np
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
+import timeit
 
-if __name__ == '__main__':
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     sim_ticks = 100         # Simulation time
     N_CORES = 1             # Number of cores
     N_NEURONS = [2]         # Number of neurons per core (list)
@@ -105,13 +109,17 @@ if __name__ == '__main__':
 #    #                                         prefix='test_prob')
 #    # intel_fpga_writer.write()
 #    # intel_fpga_writer.write_globals()
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+ 
 
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     states_core0 = states[0][1]
 
@@ -122,4 +130,18 @@ if __name__ == '__main__':
         ax.plot(states_core0[:-1, 0, i-1], 'b', lw=3)
         ax.plot(states_core0[:-1, 1, i-1], 'r', lw=3)
         # ax.plot(states_core0[:-1, 0, i-1], 'r--', lw=1, alpha=0.4)
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

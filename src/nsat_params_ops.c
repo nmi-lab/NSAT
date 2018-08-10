@@ -234,7 +234,7 @@ void read_core_params(FILE *fp, nsat_core *core, int num_cores) {
         fread_test(res, 1);
         if (core[p].core_pms.num_learning_pms_groups > N_LRNGROUPS) {
             printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-            printf("CORE #%d: Invalid number of NSAT parameters groups!\n", p);
+            printf("CORE #%d: Invalid number of NSAT learning parameters groups!\n", p);
             exit(-1);
         }
 
@@ -451,6 +451,7 @@ void read_monitor_params(FILE *fp, nsat_core *cores, int num_cores) {
 
     for (p = 0; p < num_cores; ++p) {
         fread(&cores[p].mon_pms->mon_states, sizeof(bool), 1, fp);
+        printf("nsat_params_ops:read_monitor_params() core %d monitor state is %d\n", p, (int)(cores[p].mon_pms->mon_states));
         fread(&cores[p].mon_pms->mon_weights, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_final_weights, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_spikes, sizeof(bool), 1, fp);

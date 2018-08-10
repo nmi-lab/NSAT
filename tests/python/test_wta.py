@@ -13,7 +13,14 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
+import timeit
 
+# Globals
+sim_ticks = 60000           # Simulation ticks
+SL = None
+t_start = 0
+t_stop = 25000
 
 def SimSpikingStimulus(rates=[5, 10], t_start=1000, t_stop=4000):
     n = np.shape(rates)[0]
@@ -130,8 +137,10 @@ def pretty_fig(spks, states, t_stop=1000):
                                 weight='bold')
 
 
-if __name__ == "__main__":
-    sim_ticks = 60000           # Simulation ticks
+def setup():
+    global SL, t_start, t_stop
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     N_CORES = 1                 # Number of cores
     N_NEURONS = [4]             # Number of neurons per core
     N_INPUTS = [3]              # Number of inputs per core
@@ -228,21 +237,40 @@ if __name__ == "__main__":
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_wta')
     c_nsat_writer.write()
 
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     states_core0 = states[0][1]
 
     in_spikelist = SL
-    out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                    sim_ticks=sim_ticks,
                                    id_list=[0])
 
     spks = out_spikelist.convert("[times,ids]")
     spks = np.vstack([spks[0], spks[1]]).astype('int')
     pretty_fig(spks, states_core0, t_stop=t_stop)
-    plt.show()
+
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

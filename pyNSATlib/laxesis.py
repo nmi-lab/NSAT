@@ -226,16 +226,16 @@ class Population(object):
 
     def partition(self, nparts=1):
         pop_list = []
-        assert self.n//nparts == int(self.n/parts)
+        assert self.n // nparts == int(self.n / parts)
         for i in range(nparts):
-            pop_list.append(Population(name=self.name+'_part{0}'.format(i),
-                                       n=self.n//nparts,
+            pop_list.append(Population(name=self.name + '_part{0}'.format(i),
+                                       n=self.n // nparts,
                                        neuron_cfg=self.ntype,
                                        is_external=self.is_external))
         return pop_list
 
     def __repr__(self):
-        return self.name+"({0},{1})".format(len(self), self.core)
+        return self.name + "({0},{1})".format(len(self), self.core)
 
 
 # Connection function factories
@@ -478,6 +478,7 @@ class Connection(object):
 
 
 class Graph(igraph.Graph):
+
     def add_vertex_and_return(self, name=None, **kwds):
         """add_vertex_return(name=None, **kwds)
 
@@ -620,7 +621,7 @@ class LogicalGraphSetup(object):
                 else:
                     if len(es) > 0:
                         pop_ext = src_v['data'].gen_ext_copy(core)
-                        ext_v = physical_graph.add_vertex_and_return(name=src_v['name']+'_ext_core{0}'.format(
+                        ext_v = physical_graph.add_vertex_and_return(name=src_v['name'] + '_ext_core{0}'.format(
                             core), id=pop_ext.id, is_external=True, data=pop_ext, core=core)
                         print(ext_v['name'])
                         new_intercore_edge = physical_graph.add_edge_and_return(
@@ -637,7 +638,7 @@ class LogicalGraphSetup(object):
     def generate_multicore_setup(self, setup_type=MulticoreResourceManager):
         graph = self.generate_core_assigned_graph()
         cores = np.unique(graph.vs['core'])
-        ncores = np.max(cores)+1
+        ncores = np.max(cores) + 1
         mc_setup = setup_type(ncores=ncores)
         for v in graph.vs:
             # TODO: ext pop workaround

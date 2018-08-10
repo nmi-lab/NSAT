@@ -1,0 +1,4 @@
+*.npy
+/.project
+/.pydevproject
+/build/lib/*

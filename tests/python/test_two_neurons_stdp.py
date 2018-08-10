@@ -13,6 +13,11 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
+import timeit
+
+# Globals
+sim_ticks = 500             # Simulation ticks
 
 
 def RegularSpikingStimulus(freqs, ticks=1000):
@@ -27,8 +32,9 @@ def RegularSpikingStimulus(freqs, ticks=1000):
     return nsat.exportAER(SL)
 
 
-if __name__ == '__main__':
-    sim_ticks = 500             # Simulation ticks
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     N_CORES = 1                 # Number of cores
     N_NEURONS = [2]             # Number of neurons per core
     N_INPUTS = [1]              # Number of inputs per core
@@ -148,16 +154,22 @@ if __name__ == '__main__':
 ##    intel_fpga_writer.write()
 ##    intel_fpga_writer.write_globals()
 
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
-    wt = c_nsat_reader.read_c_nsat_weights_evo(2)[0]
-    out_spikelist = nsat.importAER(nsat.read_from_file(c_nsat_writer.fname.events+'_core_0.dat'),
+    wt, pids = c_nsat_reader.read_synaptic_weights_history(post=[2])
+    wt = wt[0]
+    out_spikelist = nsat.importAER(nsat.read_from_file(nsat.fnames.events+'_core_0.dat'),
                                    sim_ticks=sim_ticks, id_list=[0])
 
     # Plot the results
@@ -201,4 +213,18 @@ if __name__ == '__main__':
         plt.axvline(i, color='k', lw=1)
     for i in out_spikelist[1].spike_times:
         plt.axvline(i, color='b', lw=1)
-    plt.show()
+    
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

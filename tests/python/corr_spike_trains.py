@@ -1,24 +1,25 @@
 # corr_spike_trains - This Python script implements algorithms based on [1]
-# for generating correlated spike trains. 
-# 
+# for generating correlated spike trains.
+#
 # [1] : Romain Brette, "Generation of Correlated Spike Trains", Neural
 # Computation 21, 188-215, 2009.
 #
 # Copyright (C) 2016  Georgios Is. Detorakis (gdetor@protonmail.com)
-# 
+#
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
 # as published by the Free Software Foundation; either version 2
 # of the License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+# 02110-1301, USA.
 import numpy as np
 import matplotlib.pylab as plt
 
@@ -27,6 +28,7 @@ class correlated_spikes(object):
     """ correlated_spikes Is the main class implemented [1]. Two basic methods
         are implemented in this script: Cox processes and the Mixture method.
     """
+
     def __init__(self, C, rates, n_proc):
         """ Constructor of correlated_spikes class. 
 
@@ -56,7 +58,7 @@ class correlated_spikes(object):
                                  decomposition) with diagona filled with r^2 *
                                  alpha (see [1])
         """
-        # Change diagonal with r^2 
+        # Change diagonal with r^2
         d = np.diag(self.C)**2
         np.fill_diagonal(self.C, d)
 
@@ -68,7 +70,7 @@ class correlated_spikes(object):
 
         # Compute alpha as the minimum eigenvalue with negative sign
         alpha = -w.real.min()
-        
+
         # Fill the diagonal of L with r^2 * alpha
         np.fill_diagonal(L, d * alpha)
 
@@ -102,7 +104,7 @@ class correlated_spikes(object):
 
             # Compute instantaneous rates
             X = R + np.dot(L, Y)
-        
+
             # Create spikes list
             prob = np.random.uniform(0, 1, (self.n_proc,))
             idx = (X * 0.001 * dt) > prob
@@ -215,7 +217,7 @@ class correlated_spikes(object):
                                  and ids (id is the number of target spike 
                                  train)
         """
-        # Average target rate    
+        # Average target rate
         r_mean = np.mean(np.dot(P, nu))
 
         # Optimal window size
@@ -224,14 +226,14 @@ class correlated_spikes(object):
         # Window
         w_size = int(time * 0.001)
 
-        # Number of spikes in trains 
-        num_sources = np.random.poisson(nu*w_size).astype('int')
+        # Number of spikes in trains
+        num_sources = np.random.poisson(nu * w_size).astype('int')
 
         # Generate Poisson spike trains
         source_train = []
         for i in range(num_sources.shape[0]):
-            source_train.append(np.random.uniform(0, w_size, num_sources[i])*1000)
-
+            source_train.append(np.random.uniform(
+                0, w_size, num_sources[i]) * 1000)
 
         spk, tm = [], []
         for i in range(n_src):
@@ -240,9 +242,9 @@ class correlated_spikes(object):
                 target_train = np.random.choice(source_train[i],
                                                 size=num_targets,
                                                 replace=False)
-                spk.extend(np.ones((num_targets,))*j)
-                tm.extend(target_train + 
-                          self.random_latency(num_targets)*tau_c)
+                spk.extend(np.ones((num_targets,)) * j)
+                tm.extend(target_train +
+                          self.random_latency(num_targets) * tau_c)
         spk = np.array(spk, dtype='int')
         tm = np.array(tm)
 
@@ -285,8 +287,8 @@ class correlated_spikes(object):
         fig = plt.figure()
         ax = fig.add_subplot(111)
         for i in range(self.n_proc):
-            ax.plot(self.spikes[:, i]+i, '|k', ms=20, mew=1)
-        ax.set_ylim([0, self.n_proc+1])
+            ax.plot(self.spikes[:, i] + i, '|k', ms=20, mew=1)
+        ax.set_ylim([0, self.n_proc + 1])
         ax.set_yticks([])
 
 
@@ -304,7 +306,7 @@ if __name__ == '__main__':
         cor_spk.raster_plot()
         spk = cor_spk.extract_pyNCS_list()
         plt.show()
-    
+
     if 1:
         n_proc = 5
         P = np.random.randint(0, 2, (n_proc, n_proc))

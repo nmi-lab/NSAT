@@ -12,10 +12,21 @@
 # Licence : GPLv2
 # ---------------------------------------------------------------------------
 import os
+import sys
 import numpy as np
 from pyNCSre import pyST
-from .global_vars import *
+from pyNSATlib.global_vars import *
+from ctypes import POINTER, cdll, c_int, Structure, c_char_p
 import copy
+
+python_version = sys.version_info[:3]
+
+if python_version[0] >= 3 and python_version[1] > 4:
+    version_flag = 3
+    import _pickle
+else:
+    version_flag = 2
+    import pickle
 
 
 def find_nsat_library():
@@ -25,6 +36,8 @@ def find_nsat_library():
     '''
     ldlp = os.environ.get('LD_LIBRARY_PATH')
     if ldlp is None:
+        print(os.getcwd())
+        return '../../lib/libnsat.so'
         raise RuntimeError('LD_LIBRARY_PATH not set')
     ldlp = ldlp.split(':')
     for p in ldlp:
@@ -33,18 +46,34 @@ def find_nsat_library():
     raise RuntimeError('libnsat.so file not found. Try adding nsat lib \
                         directory to LD_LIBRARY_PATH')
 
+#
+# def run_c_nsat(fname):
+#     from ctypes import POINTER, cdll, c_int
+# #    from .nsat_writer import c_nsat_fnames, generate_c_fnames
+#
+#     _nsat = cdll.LoadLibrary(find_nsat_library())
+#
+#     # handle = _nsat._handle
+#     _nsat.iterate_nsat.argtypes = (POINTER(c_nsat_fnames),)
+#     _nsat.iterate_nsat.restype = c_int
+#
+#     flag = _nsat.iterate_nsat(generate_c_fnames(fname))
+#     flag = _nsat.iterate_nsat(generate_c_fnames(fname))
+#     return flag
 
-def run_c_nsat(fname):
-    from ctypes import POINTER, cdll, c_int
-    from .nsat_writer import c_nsat_fnames, generate_c_fnames
+
+def run_c_nsat():
+    #     from ctypes import POINTER, cdll, c_int
+    #     from global_vars import c_nsat_fnames
 
     _nsat = cdll.LoadLibrary(find_nsat_library())
 
     # handle = _nsat._handle
+    c_fnames = c_nsat_fnames(fname=fnames)
     _nsat.iterate_nsat.argtypes = (POINTER(c_nsat_fnames),)
     _nsat.iterate_nsat.restype = c_int
 
-    flag = _nsat.iterate_nsat(generate_c_fnames(fname))
+    flag = _nsat.iterate_nsat(c_fnames)
     return flag
 
 
@@ -59,7 +88,7 @@ def build_SpikeList(evs_time,
 
     inputs:
     *evs_time*: list of event timesteps
-    *evs_addr*: list of event addresses
+                      *evs_addr*: list of event addresses
     *dt*: scaling of timesteps (default is ms)
     *id_list*: list of neuron ids (optional). If no id_list is provided,
     neurons that have never spikes will not be represented explicitely.
@@ -224,7 +253,7 @@ class coreConfig(object):
     def __init__(self, n_states, n_neurons, n_inputs):
         for i in self.NSAT_parameters:
             setattr(self, i, None)
-        self.gen_core_cfg(n_states, n_neurons, n_inputs)
+        self.gen_core_cfg(self, n_states, n_neurons, n_inputs)
         self.default_core_cfg = copy.deepcopy(self)
 
     def __repr__(self):
@@ -236,7 +265,7 @@ class coreConfig(object):
                    Ngroups: {n_groups}
                    L0 connections: {nnz}'''.format(nnz=self.ptr_table.nnz, **self.__dict__)
 
-    def gen_core_cfg(core_cfg, n_states, n_neurons, n_inputs):
+    def gen_core_cfg(self, core_cfg, n_states, n_neurons, n_inputs):
 
         rn_states = list(range(n_states))     # number of states per neuron
         N_GROUPS = core_cfg.n_groups = 8
@@ -328,7 +357,7 @@ class coreConfig(object):
 
         if n_states == None:
             n_states = self.n_states
-        from .utils import latex_print_group
+        from pyNSATlib.utils import latex_print_group
         import copy
         NSAT_parameters = copy.deepcopy(self.NSAT_parameters)
         NSAT_parameters.pop(NSAT_parameters.index('lrnmap'))
@@ -392,7 +421,7 @@ def check_matrix(core_cfg, A):
 def check_vector(core_cfg, vector, dtype='int'):
     Ns = core_cfg.n_states
     if np.shape(vector) != (core_cfg.n_groups, Ns):
-        vector = [vector for i in range(core_cfg.n_groups)]
+        vector = [i.vector for i in range(core_cfg.n_groups)]
     assert np.shape(vector) == (core_cfg.n_groups, Ns)
     return np.array(vector, dtype=dtype)
 
@@ -493,31 +522,28 @@ class ConfigurationNSAT(object):
         self.routing_en = False
 
         if not hasattr(plasticity_en, '__len__'):
-            print("All the cores receive the same learning flag ({0})!".format(plasticity_en))
-            self.plasticity_en = np.array([plasticity_en]*N_CORES, 'bool')
+            print("All the cores receive the same learning flag ({0})!".format(
+                plasticity_en))
+            self.plasticity_en = np.array([plasticity_en] * N_CORES, 'bool')
         else:
-            self.plasticity_en = np.array(plasticity_en, 'bool')
-        # if len(plasticity_en) != N_CORES:
-        #     print("All the cores receive the same learning flag ({0})!".format(
-        #         plasticity_en))
-        #     self.plasticity_en = np.array([plasticity_en] * N_CORES, 'bool')
-        # else:
-        #     self.plasticity_en = np.array(plasticity_en, 'bool')
+            if plasticity_en.shape[0] != N_CORES:
+                self.plasticity_en = np.tile(plasticity_en,
+                                             N_CORES).astype('bool')
+            else:
+                self.plasticity_en = np.array(plasticity_en, 'bool')
 
         assert(hasattr(self.plasticity_en, '__len__'))
 
         if not hasattr(gated_learning, '__len__'):
-            print("All the cores receive the same gated learning flag ({0})!".format(gated_learning))
+            print("All the cores receive the same gated learning flag ({0})!".format(
+                gated_learning))
             self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
         else:
-            self.gated_learning = np.array(gated_learning, dtype='bool')
-        # if len(gated_learning) != N_CORES:
-        #     print("All the cores receive the same gated learning flag ({0})!".format(
-        #         gated_learning))
-        #     self.gated_learning = np.array(
-        #         [gated_learning for _ in range(N_CORES)], 'bool')
-        # else:
-        #     self.gated_learning = np.array(gated_learning, dtype='bool')
+            if gated_learning.shape[0] != N_CORES:
+                self.gated_learning = np.tile(gated_learning,
+                                              N_CORES).astype('bool')
+            else:
+                self.gated_learning = np.array(gated_learning, dtype='bool')
 
         assert not hasattr(
             monitor_states, '__len__'), "Monitors are System Wide"
@@ -533,7 +559,8 @@ class ConfigurationNSAT(object):
         self.monitor_weights = monitor_weights  # Enabled on write_hex
         assert not hasattr(monitor_weights_final,
                            '__len__'), "Monitors are System Wide"
-        self.monitor_weights_final = monitor_weights_final  # Enabled on write_hex
+        # Enabled on write_hex
+        self.monitor_weights_final = monitor_weights_final
 
         self.s_seq = s_seq
         self.w_boundary = w_boundary
@@ -555,7 +582,6 @@ class ConfigurationNSAT(object):
         self.set_default_monitors(spk_rec_mon, syn_ids_rec)
 
     def copy(self):
-        import copy
         return copy.deepcopy(self)
 
     def __getitem__(self, k):
@@ -568,17 +594,56 @@ class ConfigurationNSAT(object):
         for i, p in enumerate(self.core_cfgs):
             yield i, p
 
+    def writeb(self, fh):
+        """ Pickles this object into the supplied binary file handle """
+        try:
+            if version_flag == 3:
+                # Only works for Python >3.4
+                _pickle.dump(self, fh, fix_imports=False)
+            else:
+                pickle.dupp(self, fh)
+# _pickle.dump(self, fh, protocol=_pickle.HIGHEST_PROTOCOL,
+# fix_imports=False) # Only works for Python >3.4
+        except:
+            print("NSATlib:ConfigurationNSAT.writeb(self,fh) failed to pickle correctly")
+            raise SystemExit
+
+    def writefileb(self, f):
+        """ Pickles this object into the filename provided """
+        with compression_strategy(f, 'wb') as fh:
+            self.writeb(fh)
+
+    @staticmethod
+    def readb(fh):
+        """ Unpickles this object from the supplied binary file handle """
+        try:
+            if version_flag == 3:
+                # Only works for Python >3.4
+                return _pickle.load(fh, fix_imports=False)
+            else:
+                # Only works for Python >3.4
+                return pickle.load(fh, fix_imports=False)
+        except:
+            print("NSATlib:ConfigurationNSAT.readb(self,fh) failed to unpickle correctly")
+            raise SystemExit
+
+    @staticmethod
+    def readfileb(f):
+        """ Unpickles this object from the filename provided """
+        with compression_strategy(f, 'rb') as fh:
+            return ConfigurationNSAT.readb(fh)
+
     def set_default_monitors(self, spk_rec_mon=None, syn_ids_rec=None):
                 # Neuron ids to be monitored
         self.spk_rec_mon = spk_rec_mon
         if self.spk_rec_mon is None:
             self.spk_rec_mon = [
-                np.arange(p.n_neurons, dtype='int') for i, p in self]
+                np.arange(p.n_neurons, dtype='int') for _, p in self]
 
         # Synapse ids to be monitored
         if syn_ids_rec is None and self.ext_evts is False:
             self.syn_ids_rec = [
-                np.arange(p.n_inputs + p.n_neurons, dtype='int') for i, p in self]
+                np.arange(p.n_inputs + p.n_neurons, dtype='int') for _, p in self]
         else:
             self.syn_ids_rec = np.array(syn_ids_rec, 'int')
 
@@ -633,7 +698,7 @@ class ConfigurationNSAT(object):
 
     def set_L1_connectivity(self, l1_conn):
         assert type(l1_conn) == dict, "l1_conn must be a dictionary"
-        for k, v in l1_conn.items():
+        for k, _ in l1_conn.items():
             assert len(k) == 2, "keys must be (src_core, src_neuron)"
         self.L1_connectivity = l1_conn.copy()
 
@@ -641,7 +706,7 @@ class ConfigurationNSAT(object):
         '''
         Set all parameter groups for all cores
         '''
-        for p, core in self:
+        for _, core in self:
             self.set_groups_core(core)
         self.groups_set = True
 

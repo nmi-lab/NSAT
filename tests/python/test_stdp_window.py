@@ -13,7 +13,13 @@ import pyNSATlib as nsat
 from corr_spike_trains import correlated_spikes
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
+import timeit
 
+# Globals
+sim_ticks = 1000                # Simulation ticks
+SL = None
+spk0 = None
 
 def SimSpikingStimulus(rates, t_sim=None):
     m = np.shape(rates)[0]
@@ -57,8 +63,10 @@ def PeriodicPrePostSpikingStimulus(freqs, diff, ticks=1000):
     return SL
 
 
-if __name__ == '__main__':
-    sim_ticks = 1000                # Simulation ticks
+def setup():
+    global SL, spk0
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     N_CORES = 1                     # Number of cores
     N_NEURONS = [1]                 # Number of neurons per core (list)
     N_INPUTS = [2]                 # Number of inputs per core (list)
@@ -180,21 +188,26 @@ if __name__ == '__main__':
 #    intel_fpga_writer.write()
 #    intel_fpga_writer.write_globals()
 
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+ 
+
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    global spk0
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     #ww = np.array(c_nsat_reader.read_c_nsat_synaptic_weights()[0])
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
     # wt = c_nsat_reader.read_c_nsat_syn_evo()[0][0]
-    wt = c_nsat_reader.read_synaptic_weights_history()[0]
+    wt, pids = c_nsat_reader.read_synaptic_weights_history()
+    wt = wt[0]
 
-    # spk = nsat.importAER(nsat.read_from_file(
-    #     c_nsat_writer.fname.events + '_core_0.dat'), sim_ticks=sim_ticks)
-    spk = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    spk = nsat.importAER(c_nsat_reader.read_events(0),
                          sim_ticks=sim_ticks)
     spk.raster_plot()
 
@@ -262,4 +275,17 @@ if __name__ == '__main__':
     #    plt.plot(wt[:, 1, 1], 'r', lw=3)
     #    plt.axvline(i, color='k', lw=1)
 
-    plt.show()
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

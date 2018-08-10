@@ -100,61 +100,71 @@ void get_external_events_per_core(FILE *fp, nsat_core **core,
 
 
 #if DAVIS == 1
-void get_davis_events(int fd, nsat_core **cores) {
-    int i, time, num_events, n;
-    int buffer, core_id, neuron_id;
+/* extern pthread_mutex_t lock; */
+/* extern route_list_ *davis_; */
 
-    struct timespec tm;
+void get_davis_events(int fd) {
+    /* int i, time, num_events, n; */
+    /* int buffer, core_id, neuron_id; */
+    /* static int times = 0; */
 
-    tm.tv_sec = 0;
-    tm.tv_nsec = 10000000;
+    /* struct timespec tm; */
 
-    for(;;) {
-        n = read(fd, &buffer, sizeof(int));
-        if (n > 0) {
-            while (n != 4) {
-                lseek(fd, -n, SEEK_CUR);
-                n = read(fd, &buffer, sizeof(int));
-                nanosleep(&tm, &tm);
-            }
-            time = buffer;
+    /* tm.tv_sec = 0; */
+    /* tm.tv_nsec = 10000000; */
 
-            n = read(fd, &buffer, sizeof(int));
-            while (n != 4) {
-                lseek(fd, -n, SEEK_CUR);
-                n = read(fd, &buffer, sizeof(int));
-                nanosleep(&tm, &tm);
-            }
-            num_events = buffer;
+    /* for(;;) { */
+    /*     n = read(fd, &buffer, sizeof(int)); */
+    /*     if (n > 0) { */
+    /*         while (n != 4) { */
+    /*             lseek(fd, -n, SEEK_CUR); */
+    /*             n = read(fd, &buffer, sizeof(int)); */
+    /*             nanosleep(&tm, &tm); */
+    /*         } */
+    /*         time = buffer; */
 
-            for (i = 0; i < num_events; ++i) {
-                n = read(fd, &buffer, sizeof(int));
-                while (n != 4) {
-                    lseek(fd, -n, SEEK_CUR);
-                    n = read(fd, &buffer, sizeof(int));
-                    nanosleep(&tm, &tm);
-                }
-                core_id = buffer;
+    /*         n = read(fd, &buffer, sizeof(int)); */
+    /*         while (n != 4) { */
+    /*             lseek(fd, -n, SEEK_CUR); */
+    /*             n = read(fd, &buffer, sizeof(int)); */
+    /*             nanosleep(&tm, &tm); */
+    /*         } */
+    /*         num_events = buffer; */
 
-                n = read(fd, &buffer, sizeof(int));
-                while (n != 4) {
-                    lseek(fd, -n, SEEK_CUR);
-                    n = read(fd, &buffer, sizeof(int));
-                    nanosleep(&tm, &tm);
-                }
-                neuron_id = buffer;
-                array_list_push(&(*cores)[core_id].ext_events, neuron_id,
-                                (*cores)[core_id].curr_time, 1);
-                (*cores)[core_id].ext_neuron[neuron_id].counter = time;
-            }
-            break;
-        } else if (n < 0) {
-            break;
-        } else {
-            nanosleep(&tm, &tm);
-            continue;
-        }
-    }
+    /*         printf(" %d  %d ", time, num_events); */
+    /*         for (i = 0; i < num_events; ++i) { */
+    /*             n = read(fd, &buffer, sizeof(int)); */
+    /*             while (n != 4) { */
+    /*                 lseek(fd, -n, SEEK_CUR); */
+    /*                 n = read(fd, &buffer, sizeof(int)); */
+    /*                 nanosleep(&tm, &tm); */
+    /*             } */
+    /*             core_id = buffer; */
+
+    /*             n = read(fd, &buffer, sizeof(int)); */
+    /*             while (n != 4) { */
+    /*                 lseek(fd, -n, SEEK_CUR); */
+    /*                 n = read(fd, &buffer, sizeof(int)); */
+    /*                 nanosleep(&tm, &tm); */
+    /*             } */
+    /*             neuron_id = buffer; */
+    
+    /*             printf(" %d  %d ", core_id, neuron_id); */
+    /*             pthread_mutex_lock(&lock); */
+    /*             array_list_push(&davis_[core_id].units, neuron_id, time, 1); */
+    /*             /1* array_list_push(&davis_[core_id].units, neuron_id, *1/ */
+    /*             /1*                 (*core)->curr_time, 1); *1/ */
+    /*             pthread_mutex_unlock(&lock); */
+    /*         } */
+    /*         printf("\n"); */
+    /*         break; */
+    /*     } else if (n < 0) { */
+    /*         break; */
+    /*     } else { */
+    /*         nanosleep(&tm, &tm); */
+    /*         continue; */
+    /*     } */
+    /* } */
 }
 #endif
 

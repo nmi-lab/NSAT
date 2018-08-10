@@ -20,15 +20,21 @@ CC=gcc
 LINKER=gcc -o
 # LDFLAGS = -lm -std=c99 -pthread
 LDFLAGS = -lm -pthread
+#LDFLAGS = -pthread
 # LDFLAGS = -lm -std=c99 -pg -pthread -no-pie # profiler
-# LDFLAGS = -lm -pthread -pg
+#LDFLAGS = -lm -pthread -pg
+
+UNAME := $(shell uname)
+ifeq ($(UNAME), Darwin)
+	LDFLAGS = -pthread
+endif
 
 ifeq ($(MODE), DB)
-	CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -fPIC -I$(INCDIR)
+  	CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -fPIC -I$(INCDIR)
 	# CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -I$(INCDIR)
 	# CFLAGS=-g -Wall -pedantic -fstack-protector-all -pg -I$(INCDIR)
 else ifeq ($(MODE), LB)
-	CFLAGS= -Ofast -ftree-vectorize -fPIC -flto -msse2 -march=native -mtune=native -I$(INCDIR) 
+	CFLAGS= -Ofast -ftree-vectorize -fPIC -flto -msse2 -march=native -mtune=native -I$(INCDIR)
 else
 	CFLAGS=-Ofast -ftree-vectorize -msse2 -pipe -march=native -mtune=native -flto -I$(INCDIR)
 	# CFLAGS=-O2 -funroll-loops -flto -I$(INCDIR)
@@ -37,8 +43,8 @@ endif
 SOURCES  := $(wildcard $(SRCDIR)/*.c)
 OBJECTS  := $(SOURCES:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 
-# DEMOSRC  := $(wildcard $(DEMODIR)/*.c)
-DEMOSRC  := $(DEMODIR)/run_any_test.c
+DEMOSRC  := $(wildcard $(DEMODIR)/*.c)
+#DEMOSRC  := $(DEMODIR)/run_any_test.c
 DEMOOBJ  := $(DEMOSRC:$(DEMODIR)/%.c=$(OBJDIR)/%.o)
 
 INCLUDES := $(wildcard $(INCDIR)/*.h)
@@ -65,7 +71,7 @@ $(DEMOOBJ): $(OBJDIR)/%.o : $(DEMODIR)/%.c
 
 
 $(LIBDIR)/$(LTARGET): $(OBJECTS)
-	gcc  -shared -o $@ $^ $(LDFLAGS)
+	$(CC) -shared -o $@ $^ $(LDFLAGS)
 
 .PHONY: clean cleanall
 

@@ -319,7 +319,7 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             /* Check if the number of input weights is valid */
             if (parity_check != non_zero_elements) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-                printf("Invalid synaptic weights dimension!\n");
+                printf("Invalid synaptic weights dimension (input, 322)!\n");
                 printf("%d %d %d\n", parity_check,
                                            non_zero_elements,
                                            (*core)[p].core_pms.num_neurons);
@@ -375,7 +375,7 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             /* Check if the number of input weights is valid */
             if (parity_check != non_zero_elements) {
                 printf(ANSI_COLOR_RED "ERROR:  " ANSI_COLOR_RESET);
-                printf("Invalid synaptic weights dimension!\n");
+                printf("Invalid synaptic weights dimension (inputs)!\n");
                 fclose(fp);
                 exit(-1);
             }

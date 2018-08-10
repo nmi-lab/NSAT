@@ -13,7 +13,10 @@ from pyNCSre import pyST
 import pyNSATlib as nsat
 import matplotlib.pylab as plt
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
+import os
+import timeit
 
+sim_ticks = 200                # Simulation ticks
 
 def SimSpikingStimulus(t_sim=None):
     SL = pyST.SpikeList(id_list=[0, 1, 2, 3])
@@ -28,8 +31,9 @@ def SimSpikingStimulus(t_sim=None):
     return SL
 
 
-if __name__ == '__main__':
-    sim_ticks = 200                # Simulation ticks
+def setup():
+    print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
     N_CORES = 1                     # Number of cores
     N_NEURONS = [4]                 # Number of neurons per core (list)
     N_INPUTS = [4]                 # Number of inputs per core (list)
@@ -156,28 +160,34 @@ if __name__ == '__main__':
     # Write the C NSAT parameters binary files
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_stdp')
     c_nsat_writer.write()
+    
+    print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
 
+def run():
     # Call the C NSAT
-    print("Running C NSAT!")
-    nsat.run_c_nsat(c_nsat_writer.fname)
+    print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
+    nsat.run_c_nsat()
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
-
-    c_nsat_reader = nsat.C_NSATReader(cfg, c_nsat_writer.fname)
+    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
     # w0 = c_nsat_reader.read_synaptic_weights_history(post=0)[0][:, 0, 1]
-    w0 = c_nsat_reader.read_synaptic_weights_history(post=5)[0][:, 4, 1]
-    w1 = c_nsat_reader.read_synaptic_weights_history(post=6)[0][:, 4, 1]
-    w2 = c_nsat_reader.read_synaptic_weights_history(post=7)[0][:, 4, 1]
+    w0, pids0 = c_nsat_reader.read_synaptic_weights_history(post=[5])
+    w0 = w0[0][:, 4, 1]
+    w1, pids1 = c_nsat_reader.read_synaptic_weights_history(post=[6])
+    w1 = w1[0][:, 4, 1]
+    w2, pids2 = c_nsat_reader.read_synaptic_weights_history(post=[7])
+    w2 = w2[0][:, 4, 1]
     np.save('w0', w0)
     np.save('w1', w1)
     np.save('w2', w2)
     # w = c_nsat_reader.read_synaptic_weights()
 
-    out_spikelist = nsat.importAER(c_nsat_reader.read_c_nsat_raw_events()[0],
+    out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
                                    sim_ticks=sim_ticks)
     np.save('spk0', out_spikelist[0].spike_times)
     np.save('spk1', out_spikelist[1].spike_times)
@@ -238,4 +248,18 @@ if __name__ == '__main__':
             ax.axvline(i, color='k', lw=1, zorder=0, label='dadsa')
         # ax.set_xlim([0, sim_ticks])
     ax.set_xlim([0, sim_ticks])
-    plt.show()
+
+    plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+    plt.close()
+    print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    
+       
+if __name__ == '__main__':
+    print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    start_t = timeit.default_timer()
+    
+    setup()
+    run()
+    
+    print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+ 

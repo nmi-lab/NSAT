@@ -1,17 +1,22 @@
 import numpy as np
 import warnings
+import pyNSATlib as nsat
+#from .NSATlib import ConfigurationNSAT, exportAER, build_SpikeList
+import struct as st
+import time
 
 
 def read_from_file(fname):
-    import struct as st
-    with open(fname, "rb") as f:
-        cont = f.read()
-    size = int(len(cont) // 4)
-    return np.array(st.unpack('i' * size, cont)).astype('i')
+    try:
+        with open(fname, "rb") as f:
+            cont = f.read()
+        size = int(len(cont) // 4)
+        return np.array(st.unpack('i' * size, cont)).astype('i')
+    except:
+        print('nsat_reader:read_from_file %s file not found or unreadable' % fname)
 
 
 def read_from_file_weights(fname):
-    import struct as st
     with open(fname, "rb") as f:
         cont = f.read()
     size = int(len(cont) // 4)
@@ -19,7 +24,7 @@ def read_from_file_weights(fname):
 
 
 def read_synaptic_weights(core_cfg, wgt_file, ptr_file, return_cw=False):
-    from .utils import ptr_wgt_table_to_dense
+    from utils import ptr_wgt_table_to_dense
     ptr = read_from_file(ptr_file)
     wgt = read_from_file(wgt_file)
     W, CW = ptr_wgt_table_to_dense(
@@ -38,6 +43,10 @@ class NSATReader(object):
 
 
 class C_NSATReader(NSATReader):
+
+    def read_config(self):
+        self.cfg = nsat.ConfigurationNSAT.readfileb(self.fname.pickled)
+        return self.cfg
 
     def read_synaptic_weights(self, return_cw=False):
         '''
@@ -88,8 +97,10 @@ class C_NSATReader(NSATReader):
             # len_ww = ww.shape[0]
             W = np.zeros((self.cfg.sim_ticks, n_units,
                           core_cfg.n_states), 'i')
-            if len(post) != 0:
-                pre_ids = []
+
+            if (len(post) == 0):
+                post = range(n_units)
+            pre_ids = []
             for i in range(len(ww)):
                 if len(ww[i * 5:i * 5 + 5]) != 0:
                     time, pre, post_, state, val = ww[i * 5:i * 5 + 5]
@@ -107,8 +118,13 @@ class C_NSATReader(NSATReader):
         S = []
         for p, core_cfg in self.cfg:
             size = len(self.cfg.spk_rec_mon[p]) * core_cfg.n_states + 1
-            tmp = read_from_file(self.fname.states +
-                                 '_core_' + str(p) + '.dat')
+            filename = self.fname.states + '_core_' + str(p) + '.dat'
+            tmp = read_from_file(filename)
+            if (tmp is None):
+                print(
+                    'Error nsat_reader:read_states() read_from_file(\'%s\') call returned None' % filename)
+                return S
+
             res = np.zeros((self.cfg.sim_ticks, len(self.cfg.spk_rec_mon[p]),
                             core_cfg.n_states + 1), 'int')
             for i in range(self.cfg.sim_ticks - 1):
@@ -145,13 +161,12 @@ class C_NSATReader(NSATReader):
         return T, S
 
     def read_spikelist(self, sim_ticks=None, id_list=None, core=0):
-        from .NSATlib import importAER
         if sim_ticks is None:
             sim_ticks = self.cfg.sim_ticks
         if id_list is None:
             id_list = self.cfg.spk_rec_mon[core]
         filename = self.fname.events + '_core_{0}.dat'.format(core)
-        spikelist = importAER(self.read_events(
+        spikelist = nsat.importAER(self.read_events(
             core), sim_ticks=sim_ticks, id_list=id_list)
         return spikelist
 

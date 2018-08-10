@@ -74,6 +74,7 @@
 #define XTHLOW -32768
 
 #define DAVIS 0
+#define BIT_SHIFT 1
 
 #define ANSI_COLOR_RED     "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
@@ -132,6 +133,7 @@ struct global_pms_s {
     int rng_init_seq;
     int num_cores;
     int syn_precision;
+    int davis_file_id;
     bool is_single_core;
     bool is_routing_on;
     bool is_bm_rng_on;
@@ -220,6 +222,7 @@ typedef struct fname_s {
     char *syn_wgt_table;
     char *syn_ptr_table;
     char *ext_events;
+    char *davis_events;
     char *synw;
     char *synw_final;
     char *events;
@@ -324,7 +327,11 @@ char *add_extension(char *);
 void get_external_events(FILE *, nsat_core **, int,
                          int);
 void get_external_events_per_core(FILE *, nsat_core **, int);
-void get_davis_events(int fd, nsat_core **cores);
+#if DAVIS == 1
+// void get_davis_events(int fd, nsat_core **cores);
+void get_davis_events(int);
+void *read_and_distribute_davis_events(void *);
+#endif
 void write_spikes_events(fnames *, nsat_core *, int);
 void write_final_weights(fnames *, nsat_core *, int);
 void write_shared_memories(fnames *, nsat_core *, int);

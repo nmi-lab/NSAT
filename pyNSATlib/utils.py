@@ -13,8 +13,8 @@
 # ---------------------------------------------------------------------------
 import pylab
 import numpy as np
-from . import NSATlib
-from .global_vars import *
+import pyNSATlib.NSATlib as nsat
+from pyNSATlib.global_vars import *
 
 
 def latex_vector_print(var, prefix='W'):

@@ -12,27 +12,12 @@
 import numpy as np
 import warnings
 import os
-from .utils import *
-from .global_vars import *
 from ctypes import Structure, c_char_p
 from pyNCSre import pyST
-
-FNAME_FIELDS = ['nsat_params_map',
-                'lrn_params_map',
-                'params',
-                'syn_wgt_table',
-                'syn_ptr_table',
-                'ext_events',
-                'synw',
-                'synw_final',
-                'events',
-                'states',
-                'check_pms',
-                'stdp_fun',
-                'stats_nsat',
-                'stats_ext',
-                'l1_conn',
-                'shared_mem']
+import timeit
+import pyNSATlib
+from pyNSATlib.utils import *
+from pyNSATlib.global_vars import *
 
 
 def pack(data, typ='i'):
@@ -53,7 +38,9 @@ class NSATWriter(object):
         if not os.path.exists(path):
             warnings.warn('Path {0} does not exist, creating'.format(path))
             os.makedirs(path)
-        self.fname = self.generate_fnames(path + '/' + prefix)
+            
+        # set global file names
+        fnames.generate(path + '/' + prefix)
 
     def write(self, write_events=True,
               write_weights=True,
@@ -71,6 +58,10 @@ class NSATWriter(object):
                         Useful when external events generation is long or
                         imported from another experiment
         '''
+        
+        print('Begin %s:NSATWriter.write()' % (os.path.splitext(os.path.basename(__file__))[0]))
+        start_t = timeit.default_timer()
+    
         if not self.cfg.groups_set:
             self.cfg.set_groups()
 
@@ -80,63 +71,23 @@ class NSATWriter(object):
         if self.cfg.ext_evts:
             self.write_ext_events()
 
+        print("End %s:NSATWriter.write() previous write_config, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
+        start2_t = timeit.default_timer()
+        
+        self.cfg.writefileb(fnames.pickled)
+
+        print("End %s:NSATWriter.write() pickling, running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start2_t))
+
         if write_weights:
             self.write_L0connectivity()
             self.write_L1connectivity()
-
-
-class c_nsat_fnames(Structure):
-    """ fnames class implements the C struct: fnames. Contains the
-        filenames of all the necessary input files.
-    """
-    _fields_ = [(s, c_char_p) for s in FNAME_FIELDS]
-
-
-class nsat_fnames(object):
-    """ fnames class implements the C struct: fnames. Contains the
-        filenames of all the necessary input files.
-    """
-    fields = FNAME_FIELDS
-
-    def __init__(self):
-        for f in self.fields:
-            setattr(self, f, '')
-
-
-def generate_c_fnames(fname=None):
-    c_fnames = c_nsat_fnames()
-    if fname is not None:
-        for f in fname.fields:
-            setattr(c_fnames, f, getattr(fname, f).encode('utf-8'))
-    return c_fnames
-
-
-def generate_default_fnames(path):
-    fname = nsat_fnames()
-    fname.nsat_params_map = path + "_nsat_params_map.dat"
-    fname.lrn_params_map = path + "_lrn_params_map.dat"
-    fname.params = path + "_params.dat"
-    fname.syn_wgt_table = path + "_wgt_table"
-    fname.syn_ptr_table = path + "_ptr_table"
-    fname.ext_events = path + "_ext_events"
-    fname.synw = path + "_weights"
-    fname.synw_final = path + "_weights_final"
-    fname.events = path + "_events"
-    fname.states = path + "_states"
-    fname.check_pms = path + "_cpms.dat"
-    fname.stdp_fun = path + "_stdp_fun.dat"
-    fname.stats_nsat = path + "_stats_nsat"
-    fname.stats_ext = path + "_stats_ext"
-    fname.l1_conn = path + "_l1_conn.dat"
-    fname.shared_mem = path + "_shared_mem"
-    return fname
 
 
 class C_NSATWriter(NSATWriter):
     # Struct contains all the file names
 
     def generate_fnames(self, path):
-        return generate_default_fnames(path)
+        return fnames.generate(path)
 
     def write_globals(self):
         # Globals are written in write_corecfgs
@@ -149,7 +100,7 @@ class C_NSATWriter(NSATWriter):
         *outputs*: None
         '''
         cfg = self.cfg
-        with open(self.fname.params, 'wb') as fh:
+        with open(fnames.params, 'wb') as fh:
             # Global parameters
             fh.write(pack(cfg.N_CORES, 'i'))
             fh.write(pack(cfg.single_core, '?'))
@@ -167,8 +118,15 @@ class C_NSATWriter(NSATWriter):
             # Core parameters
             for p, core_cfg in cfg:
                 fh.write(pack(cfg.ext_evts, '?'))
-                fh.write(pack(cfg.plasticity_en[p], '?'))
-                fh.write(pack(cfg.gated_learning[p], '?'))
+                try:
+                    fh.write(pack(cfg.plasticity_en[p], '?'))
+                except:
+                    fh.write(bytes('cfgplasticity_en[p] OOB', 'utf-8'))
+#                else: fh.write(bytes('cfgplasticity_en[p] OOB','utf-8'))
+                try:
+                    fh.write(pack(cfg.gated_learning[p], '?'))
+                except:
+                    fh.write(bytes('cfgggated_lerning_en[p] OOB', 'utf-8'))
                 fh.write(pack(core_cfg.n_inputs, 'i'))
                 fh.write(pack(core_cfg.n_neurons, 'i'))
                 fh.write(pack(core_cfg.n_states, 'i'))
@@ -207,24 +165,25 @@ class C_NSATWriter(NSATWriter):
 
             # Learning parameters
             for p, core_cfg in cfg:
-                if cfg.plasticity_en[p]:
-                    fh.write(pack(cfg.tstdpmax[p], 'i'))
-                    for j in range(core_cfg.n_lrngroups):
-                        fh.write(pack(core_cfg.tstdp[j], 'i'))
-                        fh.write(pack(core_cfg.plastic[j], '?'))
-                        fh.write(pack(core_cfg.stdp_en[j], '?'))
-                        fh.write(pack(core_cfg.is_stdp_exp_on[j], '?'))
-                        fh.write(pack(core_cfg.tca[j], 'i'))
-                        fh.write(pack(core_cfg.hica[j], 'i'))
-                        fh.write(pack(core_cfg.sica[j], 'i'))
-                        fh.write(pack(core_cfg.slca[j], 'i'))
-                        fh.write(pack(core_cfg.tac[j], 'i'))
-                        fh.write(pack(core_cfg.hiac[j], 'i'))
-                        fh.write(pack(core_cfg.siac[j], 'i'))
-                        fh.write(pack(core_cfg.slac[j], 'i'))
-                        fh.write(pack(core_cfg.is_rr_on[j], '?'))
-                        fh.write(pack(core_cfg.rr_num_bits[j], 'i'))
-
+                try:
+                    if cfg.plasticity_en[p]:
+                        fh.write(pack(cfg.tstdpmax[p], 'i'))
+                        for j in range(core_cfg.n_lrngroups):
+                            fh.write(pack(core_cfg.tstdp[j], 'i'))
+                            fh.write(pack(core_cfg.plastic[j], '?'))
+                            fh.write(pack(core_cfg.stdp_en[j], '?'))
+                            fh.write(pack(core_cfg.is_stdp_exp_on[j], '?'))
+                            fh.write(pack(core_cfg.tca[j], 'i'))
+                            fh.write(pack(core_cfg.hica[j], 'i'))
+                            fh.write(pack(core_cfg.sica[j], 'i'))
+                            fh.write(pack(core_cfg.slca[j], 'i'))
+                            fh.write(pack(core_cfg.tac[j], 'i'))
+                            fh.write(pack(core_cfg.hiac[j], 'i'))
+                            fh.write(pack(core_cfg.siac[j], 'i'))
+                            fh.write(pack(core_cfg.slac[j], 'i'))
+                            fh.write(pack(core_cfg.is_rr_on[j], '?'))
+                            fh.write(pack(core_cfg.rr_num_bits[j], 'i'))
+                except: fh.write(bytes('%d does not exist'.format(p),'utf-8'))
             # Monitor parameters
             # TODO: Separately for every core
             for p, core_cfg in cfg:
@@ -234,8 +193,8 @@ class C_NSATWriter(NSATWriter):
                 fh.write(pack(cfg.monitor_spikes, '?'))
                 fh.write(pack(cfg.monitor_stats, '?'))
 
-            """ Thee following generates the mapping function.
-                Fow now this is a vector with numbers in [0, 8),
+            """ The following generates the mapping function.
+                For now this is a vector with numbers in [0, 8),
                 and every element corresponds to a NSAT neuron
                 unit.
                 Example:
@@ -249,13 +208,13 @@ class C_NSATWriter(NSATWriter):
                     neurons but it's not recommended.
             """
 
-            # nmap = np.zeros((num_neurons, ), dtype='i')
-        with open(self.fname.nsat_params_map, 'wb') as f:
+        # nmap = np.zeros((num_neurons, ), dtype='i')
+        with open(fnames.nsat_params_map, 'wb') as f:
             for p, core_cfg in cfg:
                 f.write(pack(core_cfg.nmap, 'i'))
 
         # nmap = np.zeros((num_neurons, ), dtype='i')
-        with open(self.fname.lrn_params_map, 'wb') as f:
+        with open(fnames.lrn_params_map, 'wb') as f:
             for p, core_cfg in cfg:
                 lrnmap_unrolled = np.zeros(
                     [core_cfg.n_neurons, core_cfg.n_states], dtype='int')
@@ -282,7 +241,7 @@ class C_NSATWriter(NSATWriter):
             tm_count = Counter(tm)
             tms = list(range(1, cfg.sim_ticks))
             pos_t = 0
-            filename = self.fname.ext_events + ('_core_' + str(core) + '.dat')
+            filename = fnames.ext_events + ('_core_' + str(core) + '.dat')
             with open(filename, 'wb') as fe:
                 for t in tms:
                     tc = tm_count[t]
@@ -300,7 +259,7 @@ class C_NSATWriter(NSATWriter):
     def write_L0_ptr_table(self):
         for p, core_cfg in self.cfg:
             from scipy.sparse import issparse
-            filename = self.fname.syn_ptr_table + ('_core_' + str(p) + '.dat')
+            filename = fnames.syn_ptr_table + ('_core_' + str(p) + '.dat')
             with open(filename, 'wb') as fw:
                 if issparse(core_cfg.ptr_table):
                     cw = core_cfg.ptr_table.tocoo()
@@ -323,14 +282,14 @@ class C_NSATWriter(NSATWriter):
 
     def write_L0_wgt_table(self):
         for p, core_cfg in self.cfg:
-            filename = self.fname.syn_wgt_table + ('_core_' + str(p) + '.dat')
+            filename = fnames.syn_wgt_table + ('_core_' + str(p) + '.dat')
             with open(filename, 'wb') as fw:
                 fw.write(pack(core_cfg.wgt_table, 'i'))
 
     def write_L1connectivity(self):
         L1 = self.cfg.L1_connectivity
         n = len(L1)
-        with open(self.fname.l1_conn, 'wb') as fw:
+        with open(fnames.l1_conn, 'wb') as fw:
             fw.write(pack(n, 'i'))
             for src, dsts in L1.items():
                 nonzero_elems = len((dsts))
@@ -374,7 +333,7 @@ class C_NSATWriterSingleThread(C_NSATWriter):
         tm_count = Counter(tm)
         tms = list(range(1, cfg.sim_ticks))
         pos_t = 0
-        filename = self.fname.ext_events
+        filename = fnames.ext_events
         with open(filename, 'wb') as fe:
             for t in tms:
                 tc = tm_count[t]
@@ -397,8 +356,7 @@ def read_from_file(fname):
 
 
 if __name__ == '__main__':
-    from .NSATlib import ConfigurationNSAT, exportAER, build_SpikeList
-    cfg = ConfigurationNSAT(N_CORES=2,
+    cfg = pyNSATlib.ConfigurationNSAT(N_CORES=2,
                             N_INPUTS=[10, 10],
                             N_NEURONS=[512, 100],
                             N_STATES=[4, 2],
@@ -415,9 +373,9 @@ if __name__ == '__main__':
                         cfg.core_cfgs[1].n_inputs:] = 1
     cfg.set_L1_connectivity({(0, 1): ((1, 0), (1, 1))})
 
-    SL1 = build_SpikeList(evs_time=[1, 2, 3], evs_addr=[5, 6, 7])
-    SL2 = build_SpikeList(evs_time=[2, 5, 1], evs_addr=[3, 9, 5])
-    evs = exportAER([SL1, SL2])
+    SL1 = pyNSATlib.build_SpikeList(evs_time=[1, 2, 3], evs_addr=[5, 6, 7])
+    SL2 = pyNSATlib.build_SpikeList(evs_time=[2, 5, 1], evs_addr=[3, 9, 5])
+    evs = pyNSATlib.exportAER([SL1, SL2])
     cfg.set_ext_events(evs)
 
     c_nsat_writer = C_NSATWriter(cfg, path='/tmp/', prefix='test')
