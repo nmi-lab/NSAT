@@ -77,14 +77,14 @@ erf_ntype.Wgain[0] = 2
 
 net_graph = LogicalGraphSetup()
 
-pop_data    = net_graph.create_population(Population(name = 'pop_data ',n = Nv, core = -1, is_external = True))
-pop_lab     = net_graph.create_population(Population(name = 'pop_lab  ',n = Nl, core = -1, is_external = True))
-pop_conv1   = net_graph.create_population(Population(name = 'pop_conv1',n = Nconv1, core = 0, neuron_cfg = erf_ntype))
-pop_conv2   = net_graph.create_population(Population(name = 'pop_conv2', n = Nconv2, core = 1, neuron_cfg = erf_ntype))
-pop_conv3   = net_graph.create_population(Population(name = 'pop_conv3',n = Nconv3, core = 2, neuron_cfg = erf_ntype))
-pop_conv4   = net_graph.create_population(Population(name = 'pop_conv4',n = Nconv4, core = 3, neuron_cfg = erf_ntype))
-pop_hid     = net_graph.create_population(Population(name = 'pop_hid  ',n = Nh, core = 3, neuron_cfg = erf_ntype))
-pop_out     = net_graph.create_population(Population(name = 'pop_out  ',n = Nl, core = 0, neuron_cfg = output_ntype))
+pop_data    = net_graph.create_population(Population(name = 'pop_data ',n = Nv,     core = -1, is_external = True))
+pop_lab     = net_graph.create_population(Population(name = 'pop_lab  ',n = Nl,     core = -1, is_external = True))
+pop_conv1   = net_graph.create_population(Population(name = 'pop_conv1',n = Nconv1, core = 0,  neuron_cfg = erf_ntype))
+pop_conv2   = net_graph.create_population(Population(name = 'pop_conv2',n = Nconv2, core = 1,  neuron_cfg = erf_ntype))
+pop_conv3   = net_graph.create_population(Population(name = 'pop_conv3',n = Nconv3, core = 2,  neuron_cfg = erf_ntype))
+pop_conv4   = net_graph.create_population(Population(name = 'pop_conv4',n = Nconv4, core = 3,  neuron_cfg = erf_ntype))
+pop_hid     = net_graph.create_population(Population(name = 'pop_hid  ',n = Nh,     core = 3,  neuron_cfg = erf_ntype))
+pop_out     = net_graph.create_population(Population(name = 'pop_out  ',n = Nl,     core = 0,  neuron_cfg = output_ntype))
 
 net_graph.create_connection(pop_data,  pop_conv1, 0, connect_conv2dbank(inputsize, Nchannel, N_FEAT1, stride1, ksize))
 net_graph.create_connection(pop_conv1, pop_conv2, 0, connect_conv2dbank(inputsize, N_FEAT1, N_FEAT1, stride2, ksize)) #Repeats N_FEAT1 times
