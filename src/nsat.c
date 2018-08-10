@@ -31,6 +31,9 @@ extern inline void progress_bar(int x, int n);
 pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 _pthread_barrier_t barrier;
 route_list_ *shared_ = NULL;
+route_list_ *davis_ = NULL;
+volatile int P = 0;
+volatile int R = 0;
 
 /* ************************************************************************
  * ZERO_BIT_SHIFT: This function performs a power of two multiplication
@@ -378,19 +381,15 @@ void integrate_nsat(STATETYPE **x,
     int j;
     int k, l;
     int mysum = 0;
-
+    
     for (j = 0; j < num_neurons; ++j) {
         for (k = 0; k < num_states; ++k) {
             mysum = 0;
             for (l = 0; l < num_states; ++l) {
                 if (nsat_neuron[j].nsat_ptr->A[k*num_states+l] != -16) {
                     mysum += nsat_neuron[j].nsat_ptr->sF[k*num_states+l] * 
-#if BIT_SHIFT == 1
                              one_bit_shift(nsat_neuron[j].s[l].x,
                                            nsat_neuron[j].nsat_ptr->A[k*num_states+l]);
-#else
-                             nsat_neuron[j].s[l].x * nsat_neuron[j].nsat_ptr->A[k*num_states+l]; 
-#endif
                 }
             }
             (*x)[j*num_states+k] = nsat_neuron[j].s[k].x + mysum
@@ -415,7 +414,7 @@ void integrate_nsat(STATETYPE **x,
  *  spikes_list (array_list *)  : Spike list
  *  num_states (int)            : Number of state's components
  *
- * Returns :
+ * Returns :Vivi Kollia
  *  void
  **************************************************************************/
 void accumulate_synaptic_events(STATETYPE **acm,
@@ -808,7 +807,7 @@ void nsat_dynamics(nsat_core *core) {
                       core->core_pms.num_neurons, core->core_pms.num_states);
 
 #if DAVIS == 1
-    write_spikes_events_online(core);
+    // write_spikes_events_online(core);
 #endif
 
     /* Check for spikes and resets, and fill out events list */
@@ -973,8 +972,94 @@ void nsat_events_and_learning(nsat_core *core) {
     array_list_clean(&core->ext_caspk, 1);
     pthread_mutex_lock(&lock);
     array_list_clean(&shared_[core->core_id].units, 0);
+#if DAVIS == 1
+    array_list_clean(&davis_[core->core_id].units, 1);
+#endif
     pthread_mutex_unlock(&lock);
 }
+
+
+#if DAVIS == 1
+void wait_for_read()
+{
+    while(R != P) {
+        ;
+    }
+}
+
+void wait_for_processing()
+{
+    while(R == P) {
+        ;
+    }
+}
+
+
+void *read_and_distribute_davis_events(void *args)
+{
+    int fd = *(int *) args; 
+    int i, time, num_events, n;
+    int buffer, core_id, neuron_id;
+
+    struct timespec tm;
+
+    tm.tv_sec = 0;
+    tm.tv_nsec = 10000000;
+    
+    while(1) {
+        wait_for_processing();
+        n = read(fd, &buffer, sizeof(int));
+        if (n > 0) {
+            while (n != 4) {
+                lseek(fd, -n, SEEK_CUR);
+                n = read(fd, &buffer, sizeof(int));
+                nanosleep(&tm, &tm);
+            }
+            time = buffer;
+
+            n = read(fd, &buffer, sizeof(int));
+            while (n != 4) {
+                lseek(fd, -n, SEEK_CUR);
+                n = read(fd, &buffer, sizeof(int));
+                nanosleep(&tm, &tm);
+            }
+            num_events = buffer;
+
+            printf(" %d  %d ", time, num_events);
+            for (i = 0; i < num_events; ++i) {
+                n = read(fd, &buffer, sizeof(int));
+                while (n != 4) {
+                    lseek(fd, -n, SEEK_CUR);
+                    n = read(fd, &buffer, sizeof(int));
+                    nanosleep(&tm, &tm);
+                }
+                core_id = buffer;
+
+                n = read(fd, &buffer, sizeof(int));
+                while (n != 4) {
+                    lseek(fd, -n, SEEK_CUR);
+                    n = read(fd, &buffer, sizeof(int));
+                    nanosleep(&tm, &tm);
+                }
+                neuron_id = buffer;
+    
+                printf(" %d  %d ", core_id, neuron_id);
+                pthread_mutex_lock(&lock);
+                array_list_push(&davis_[core_id].units, neuron_id, time, 1);
+                pthread_mutex_unlock(&lock);
+            }
+            printf("\n");
+            R++;
+            // break;
+        } else if (n < 0) {
+            break;
+        } else {
+            nanosleep(&tm, &tm);
+            continue;
+        }
+    }
+}
+#endif
 
 
 void *nsat_thread(void *args)
@@ -995,21 +1080,28 @@ void *nsat_thread(void *args)
         }
     }
 #endif
-
     t_s = clock();
-#if DAVIS == 1
     for(t = 1; t < core->g_pms->ticks; ++t) {
-        if (core->core_pms.is_ext_evts_on) {
-            get_davis_events(core->g_pms->davis_file_id, &core);
+#if DAVIS == 1
+        wait_for_read();
+#endif
+        core->curr_time = t;
+
+#if DAVIS == 1
+        pthread_mutex_lock(&lock);
+        for (q = 0 ; q < davis_[core->core_id].units->length; ++q) {
+            array_list_push(&core->ext_events,
+                            davis_[core->core_id].units->array[q], t, 1);
+            core->ext_neuron[davis_[core->core_id].units->array[q]].counter = t;
         }
-#else
-    for (t = 1; t < core->g_pms->ticks; ++t) {
+        pthread_mutex_unlock(&lock);
+#endif
+
+#if DAVIS == 0
         if (core->core_pms.is_ext_evts_on) {
             get_external_events_per_core(fext, &core, t);
         }
 #endif
-        _pthread_barrier_wait(&barrier);
-        core->curr_time = t;
         nsat_dynamics((void *)&core[0]);
 
         _pthread_barrier_wait(&barrier);
@@ -1026,6 +1118,7 @@ void *nsat_thread(void *args)
         _pthread_barrier_wait(&barrier);
 
         nsat_events_and_learning((void *)&core[0]);
+        P++;
     }
     t_f = clock();
     printf("Thread %u execution time: %lf seconds\n",
@@ -1049,7 +1142,7 @@ int iterate_nsat(fnames *fname) {
     global_params g_pms;
     nsat_core *cores = NULL;
 
-    pthread_t *cores_t=NULL;
+    pthread_t *cores_t=NULL, *evts_t=NULL;
 
     /* Open parameters file */
     fp = fopen(fname->params, "rb");
@@ -1063,6 +1156,14 @@ int iterate_nsat(fnames *fname) {
         shared_[p].units = alloc(array_list, 1);
         array_list_init(&shared_[p].units, 0);
     }
+
+#if DAVIS == 1
+    davis_ = alloc(route_list_, g_pms.num_cores);
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        davis_[p].units = alloc(array_list, 1);
+        array_list_init(&davis_[p].units, 1);
+    }
+#endif
 
     /* Allocate memory for all the cores */
     cores = alloc(nsat_core, g_pms.num_cores);
@@ -1128,12 +1229,21 @@ int iterate_nsat(fnames *fname) {
 
     /* Check if clock is on */
     t0 = clock();
+
     /* Create and run threads (NSAT Cores) */
+#if DAVIS == 1
+    evts_t = alloc(pthread_t, 1);
+    pthread_create(&evts_t[0], NULL, read_and_distribute_davis_events,
+                   &g_pms.davis_file_id);
+#endif
     for (p = 0; p < g_pms.num_cores; ++p) {
         pthread_create(&cores_t[p], NULL, nsat_thread, (void *)&cores[p]);
     }
 
     /* Join threads */
+#if DAVIS == 1
+    pthread_join(evts_t[0],  NULL);
+#endif
     for (p = 0; p < g_pms.num_cores; ++p) {
         pthread_join(cores_t[p], NULL);
     }
@@ -1172,6 +1282,14 @@ int iterate_nsat(fnames *fname) {
         dealloc(shared_[p].units);
     }
     dealloc(shared_);
+
+#if DAVIS == 1
+    for (p = 0; p < g_pms.num_cores; ++p) {
+        array_list_destroy(&davis_[p].units, 0);
+        dealloc(davis_[p].units);
+    }
+    dealloc(shared_);
+#endif
 
     /* Destroy neurons parameters groups and clean up memories */
     dealloc_cores(&cores, g_pms.num_cores);

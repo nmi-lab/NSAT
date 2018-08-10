@@ -327,7 +327,11 @@ char *add_extension(char *);
 void get_external_events(FILE *, nsat_core **, int,
                          int);
 void get_external_events_per_core(FILE *, nsat_core **, int);
-void get_davis_events(int fd, nsat_core **cores);
+#if DAVIS == 1
+// void get_davis_events(int fd, nsat_core **cores);
+void get_davis_events(int);
+void *read_and_distribute_davis_events(void *);
+#endif
 void write_spikes_events(fnames *, nsat_core *, int);
 void write_final_weights(fnames *, nsat_core *, int);
 void write_shared_memories(fnames *, nsat_core *, int);

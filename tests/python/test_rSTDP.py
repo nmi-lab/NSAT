@@ -26,8 +26,9 @@ matplotlib.rcParams['figure.subplot.bottom'] = .2
 
 # Globals
 sim_ticks = 1000                # Simulation time
-core = 0 
+core = 0
 SL = None
+
 
 def SimSpikingStimulus(stim, time=1000, t_sim=None):
     '''
@@ -47,7 +48,7 @@ def SimSpikingStimulus(stim, time=1000, t_sim=None):
 def setup():
     global SL
     print('Begin %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    
+
     np.random.seed(100)             # Numpy RNG seed
     pyST.STCreate.seed(130)         # PyNCS RNG seed
     N_CORES = 1                     # Number of cores
@@ -78,25 +79,25 @@ def setup():
                                  plasticity_en=np.array([True], 'bool'),
                                  ben_clock=True)
 
-    cfg.core_cfgs[core].sigma[0] = [0,0,10,0]
+    cfg.core_cfgs[core].sigma[0] = [0, 0, 10, 0]
 
     # Transition matrix group 0
     cfg.core_cfgs[core].A[0] = [[-5, OFF, OFF, OFF],
-                             [3, -5, OFF, OFF],
-                             [OFF, OFF, -6, OFF],
-                             [OFF, OFF, OFF, OFF]]
+                                [3, -5, OFF, OFF],
+                                [OFF, OFF, -6, OFF],
+                                [OFF, OFF, OFF, OFF]]
 
     # Transition matrix group 1
     cfg.core_cfgs[core].A[1] = [[OFF, OFF, OFF, OFF],
-                             [OFF, OFF, OFF, OFF],
-                             [OFF, OFF, OFF, OFF],
-                             [OFF, OFF, OFF, OFF]]
+                                [OFF, OFF, OFF, OFF],
+                                [OFF, OFF, OFF, OFF],
+                                [OFF, OFF, OFF, OFF]]
 
     # Sign matrix group 0
     cfg.core_cfgs[core].sA[0] = [[-1, 1, 1, 1],
-                              [1, -1, 1, 1],
-                              [1, 1, -1, 1],
-                              [1, 1, 1, -1]]
+                                 [1, -1, 1, 1],
+                                 [1, 1, -1, 1],
+                                 [1, 1, 1, -1]]
 
     # Threshold
     cfg.core_cfgs[core].Xth[0] = 25000
@@ -106,7 +107,7 @@ def setup():
     cfg.core_cfgs[core].b[0] = [0,  0, 0, 0]
     # Initial conditions
     cfg.core_cfgs[core].Xinit = np.array([[0, 0, 0, 0] for _ in
-                                      range(N_NEURONS[0])])
+                                         range(N_NEURONS[0])])
     # Reset value
     cfg.core_cfgs[core].Xreset[0] = [0, MAX, MAX, MAX]
     # Turn reset on
@@ -166,9 +167,8 @@ def setup():
     # Write C NSAT parameters binary file
     c_nsat_writer = nsat.C_NSATWriter(cfg, path='/tmp', prefix='test_rSTDP')
     c_nsat_writer.write()
-    
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
- 
+
 
 def run():
     # Call the C NSAT

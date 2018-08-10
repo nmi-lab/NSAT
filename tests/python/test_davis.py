@@ -23,14 +23,15 @@ def build_davis_file(fname, num_ticks=1000):
     t = np.arange(1, num_ticks).astype('i')
     core = np.zeros((t.shape[0], ), dtype='i')
     core[t.shape[0]//2:] = 1
-    evts = np.ones((t.shape[0], ), 'i')
+    evts = np.zeros((t.shape[0], ), 'i')
+    evts[::10] = 1
     neuron = np.array([0, 1, 2, 3], 'i')
 
     with open(fname, 'wb') as f:
         for i in range(t.shape[0]):
             f.write(pack('i', t[i]))
             f.write(pack('i', evts[i]))
-            for j in range(neuron.shape[0]):
+            for j in range(evts[i]):
                 f.write(pack('i', core[i]))
                 f.write(pack('i', neuron[j]))
 
@@ -39,7 +40,7 @@ def setup():
     print('Begin %s:setup()' %
           (os.path.splitext(os.path.basename(__file__))[0]))
 
-    sim_ticks = 5000            # Simulation time
+    sim_ticks = 100            # Simulation time
     N_CORES = 2                 # Number of cores
     N_NEURONS = [1, 1]          # Number of neurons per core
     N_INPUTS = [5, 5]           # Number of inputes per core
@@ -65,10 +66,10 @@ def setup():
 
         # Sign matrix
         cfg.core_cfgs[i].sA[0] = [[-1, 1],
-                                  [-1, 1]]
+                                  [1, -1]]
 
         # Bias
-        cfg.core_cfgs[i].b[0] = np.array([50, 0], dtype='int')
+        cfg.core_cfgs[i].b[0] = np.array([0, 0], dtype='int')
         # Threshold
         cfg.core_cfgs[i].Xth[0] = 100
         # Reset value
@@ -78,10 +79,10 @@ def setup():
 
         W = np.zeros((6, 6, 2), dtype='i')
         W[0, 5, 0] = 10
-        W[1, 5, 0] = 5
-        W[2, 5, 0] = 5
-        W[3, 5, 0] = 5
-        W[3, 5, 0] = 5
+        W[1, 5, 0] = 10
+        W[2, 5, 0] = 0
+        W[3, 5, 0] = 0
+        W[3, 5, 0] = 0
 
         CW = np.zeros(W.shape, 'i')
         CW[0, 5, 0] = 1
@@ -117,18 +118,34 @@ def run():
     # Load the results (read binary files)
     c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
     states = c_nsat_reader.read_c_nsat_states()
-    time_core0, states_core0 = states[0][0], states[0][1]
+    _, states_core0 = states[0][0], states[0][1]
+    _, states_core1 = states[1][0], states[1][1]
 
     # Plot the results
     fig = plt.figure(figsize=(10, 10))
-    for i in range(1, 5):
-        ax = fig.add_subplot(4, 1, i)
+    for i in range(1, states_core0.shape[2]+1):
+        ax = fig.add_subplot(2, 1, i)
         ax.plot(states_core0[:-1, 0, i - 1], 'b', lw=3)
 
-    plt.savefig('/tmp/%s.png' %
+    plt.savefig('/tmp/%s_0.png' %
                 (os.path.splitext(os.path.basename(__file__))[0]))
+
+    fig = plt.figure(figsize=(10, 10))
+    for i in range(1, states_core0.shape[2]+1):
+        ax = fig.add_subplot(2, 1, i)
+        ax.plot(states_core1[:-1, 0, i - 1], 'b', lw=3)
+
+    plt.savefig('/tmp/%s_1.png' %
+                (os.path.splitext(os.path.basename(__file__))[0]))
+
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
+
+    out_spikelist = nsat.importAER(c_nsat_reader.read_events(0),
+                                   sim_ticks=100,
+                                   id_list=[0])
+    out_spikelist.id_slice([0]).raster_plot(kwargs={'color': 'b'})
+    plt.show()
 
 
 if __name__ == '__main__':
