@@ -107,7 +107,6 @@ void close_cores_monitor_files(nsat_core *core, size_t num_cores) {
 
 
 /* ************************************************************************
- * UPDATE_STATE_MONITOR_FILE: This functions writes at every predefined
  * time checkpoint all neurons states into a binary file. 
  *
  * Args : 

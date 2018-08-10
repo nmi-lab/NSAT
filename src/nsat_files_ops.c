@@ -282,24 +282,20 @@ void write_spikes_events(fnames *fname, nsat_core *core, int num_cores) {
 
 
 void write_spikes_events_online(nsat_core *core) {
-    int p;
+    fwrite(&core->curr_time,
+           sizeof(int),
+           1,
+           core->files->event_file);
 
-    for (p = 0; p < core->g_pms->num_cores; ++p) {
-        fwrite(&core[p].curr_time,
-               sizeof(int),
-               1,
-               core[p].files->event_file);
-
-        fwrite(&core[p].mon_events->length-1,
-               sizeof(int),
-               1,
-               core[p].files->event_file);
-        
-        fwrite(&core[p].mon_events->array,
-               sizeof(int),
-               core[p].mon_events->length-1,
-               core[p].files->event_file);
-    }
+    fwrite(&core->mon_events->length-1,
+           sizeof(int),
+           1,
+           core->files->event_file);
+    
+    fwrite(&core->mon_events->array,
+           sizeof(int),
+           core->mon_events->length-1,
+           core->files->event_file);
 }
 
 
