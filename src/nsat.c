@@ -1092,7 +1092,8 @@ void *nsat_thread(void *args)
         for (q = 0 ; q < davis_[core->core_id].units->length; ++q) {
             array_list_push(&core->ext_events,
                             davis_[core->core_id].units->array[q], t, 1);
-            core->ext_neuron[davis_[core->core_id].units->array[q]].counter = t;
+            core->ext_neuron[davis_[core->core_id].units->array[q]].counter = 
+                davis_[core->core_id].units->times[q];
         }
         pthread_mutex_unlock(&lock);
 #endif
