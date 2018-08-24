@@ -307,7 +307,6 @@ def connect_all2all(weight=0):
     def func(src_pop, tgt_pop):
         nsrc = len(src_pop)
         ndst = len(tgt_pop)
-        assert nsrc == ndst
         CW = np.ones([nsrc, ndst], dtype='bool')
         W = np.ones([nsrc, ndst], dtype='int') * weight
         p, w = connections_dense_to_sparse_nonshared(W, CW)

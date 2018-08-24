@@ -526,7 +526,7 @@ class ConfigurationNSAT(object):
                 plasticity_en))
             self.plasticity_en = np.array([plasticity_en] * N_CORES, 'bool')
         else:
-            if plasticity_en.shape[0] != N_CORES:
+            if len(plasticity_en) != N_CORES:
                 self.plasticity_en = np.tile(plasticity_en,
                                              N_CORES).astype('bool')
             else:
@@ -539,7 +539,7 @@ class ConfigurationNSAT(object):
                 gated_learning))
             self.gated_learning = np.array([gated_learning for _ in range(N_CORES)], 'bool')
         else:
-            if gated_learning.shape[0] != N_CORES:
+            if len(gated_learning) != N_CORES:
                 self.gated_learning = np.tile(gated_learning,
                                               N_CORES).astype('bool')
             else:
