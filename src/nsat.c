@@ -378,19 +378,27 @@ void integrate_nsat(STATETYPE **x,
                     int num_neurons,
                     int num_states)
 {
-    int j;
-    int k, l;
+    int j, k, l;
     int mysum = 0;
+    float a = 0;
     
     for (j = 0; j < num_neurons; ++j) {
         for (k = 0; k < num_states; ++k) {
             mysum = 0;
             for (l = 0; l < num_states; ++l) {
+#if BIT_SHIFT == 1
                 if (nsat_neuron[j].nsat_ptr->A[k*num_states+l] != -16) {
                     mysum += nsat_neuron[j].nsat_ptr->sF[k*num_states+l] * 
                              one_bit_shift(nsat_neuron[j].s[l].x,
                                            nsat_neuron[j].nsat_ptr->A[k*num_states+l]);
                 }
+#else
+                if (nsat_neuron[j].nsat_ptr->A[k*num_states+l] != -16) {
+                    a = nsat_neuron[j].s[l].x * pow(2, nsat_neuron[j].nsat_ptr->A[k*num_states+l]);
+                    mysum += nsat_neuron[j].nsat_ptr->sF[k*num_states+l]
+                                * sign(a) * ceil(abs(a));
+                }
+#endif
             }
             (*x)[j*num_states+k] = nsat_neuron[j].s[k].x + mysum
                                    + acm[j*num_states+k]

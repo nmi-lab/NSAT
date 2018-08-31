@@ -289,7 +289,7 @@ void read_core_params(FILE *fp, nsat_core *core, int num_cores) {
  *  void
  **************************************************************************/
 void read_nsat_params(FILE *fp, nsat_core *core, int num_cores) {
-    int i, p; 
+    int p, i, j, a; 
     int size_v, size_m;
     int size_i, size_n = 0;
 
