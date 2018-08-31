@@ -287,14 +287,14 @@ void write_spikes_events_online(nsat_core *core) {
            1,
            core->files->event_file);
 
-    fwrite(&core->mon_events->length-1,
+    fwrite(&core->mon_events->length,
            sizeof(int),
            1,
            core->files->event_file);
     
     fwrite(&core->mon_events->array,
            sizeof(int),
-           core->mon_events->length-1,
+           core->mon_events->length,
            core->files->event_file);
 }
 
