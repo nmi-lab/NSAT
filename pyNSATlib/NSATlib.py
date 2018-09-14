@@ -21,12 +21,14 @@ import copy
 
 python_version = sys.version_info[:3]
 
-if python_version[0] >= 3 and python_version[1] > 4:
+if python_version[0] >= 3:
     version_flag = 3
-    import _pickle
+    import pickle
+    pickle_protocol = pickle.HIGHEST_PROTOCOL
 else:
     version_flag = 2
-    import pickle
+    import cPickle as pickle
+    pickle_protocol = 2
 
 
 def find_nsat_library():
@@ -597,13 +599,7 @@ class ConfigurationNSAT(object):
     def writeb(self, fh):
         """ Pickles this object into the supplied binary file handle """
         try:
-            if version_flag == 3:
-                # Only works for Python >3.4
-                _pickle.dump(self, fh, fix_imports=False)
-            else:
-                pickle.dupp(self, fh)
-# _pickle.dump(self, fh, protocol=_pickle.HIGHEST_PROTOCOL,
-# fix_imports=False) # Only works for Python >3.4
+            pickle.dump(self, fh, protocol=pickle_protocol)
         except:
             print("NSATlib:ConfigurationNSAT.writeb(self,fh) failed to pickle correctly")
             raise SystemExit
@@ -617,12 +613,7 @@ class ConfigurationNSAT(object):
     def readb(fh):
         """ Unpickles this object from the supplied binary file handle """
         try:
-            if version_flag == 3:
-                # Only works for Python >3.4
-                return _pickle.load(fh, fix_imports=False)
-            else:
-                # Only works for Python >3.4
-                return pickle.load(fh, fix_imports=False)
+            pickle.load(fh)
         except:
             print("NSATlib:ConfigurationNSAT.readb(self,fh) failed to unpickle correctly")
             raise SystemExit
