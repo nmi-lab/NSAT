@@ -1,4 +1,6 @@
+*.pyc
 *.npy
 /.project
 /.pydevproject
 /build/lib/*
+/dist
