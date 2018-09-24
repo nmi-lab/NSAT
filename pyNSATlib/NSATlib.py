@@ -23,13 +23,14 @@ python_version = sys.version_info[:3]
 
 if python_version[0] >= 3:
     version_flag = 3
+#     from pickle import load, dump
     import pickle
     pickle_protocol = pickle.HIGHEST_PROTOCOL
 else:
     version_flag = 2
+#     from cPickle import load, dump
     import cPickle as pickle
     pickle_protocol = 2
-
 
 def find_nsat_library():
     '''

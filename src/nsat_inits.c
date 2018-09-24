@@ -301,10 +301,10 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             /* Read the pointer table */
             fread(&non_zero_elements, sizeof(int), 1, fp);
             for (i = 0; i < non_zero_elements; ++i) {
-                fread(&src, sizeof(int), 1, fp);
-                fread(&dst, sizeof(int), 1, fp);
-                fread(&stt, sizeof(int), 1, fp);
-                fread(&ptr, sizeof(int), 1, fp);
+            	fread(&src, sizeof(int), 1, fp);
+            	fread(&dst, sizeof(int), 1, fp);
+            	fread(&stt, sizeof(int), 1, fp);
+            	fread(&ptr, sizeof(int), 1, fp);
 
                 if (src < (*core)[p].core_pms.num_neurons) {
                     push_syn(&(*core)[p].nsat_neuron[src].syn_ptr[stt],
@@ -343,10 +343,10 @@ void initialize_incores_connections(fnames *fname, nsat_core **core,
             /* Read the non zero elements from fp */
             fread(&non_zero_elements, sizeof(int), 1, fp);
             for (i = 0; i < non_zero_elements; ++i) {
-                fread(&src, sizeof(int), 1, fp);
-                fread(&dst, sizeof(int), 1, fp);
-                fread(&stt, sizeof(int), 1, fp);
-                fread(&ptr, sizeof(int), 1, fp);
+            	fread(&src, sizeof(int), 1, fp);
+            	fread(&dst, sizeof(int), 1, fp);
+            	fread(&stt, sizeof(int), 1, fp);
+            	fread(&ptr, sizeof(int), 1, fp);
 
                 if (src < (*core)[p].core_pms.num_inputs) {
                     if(dst < (*core)[p].core_pms.num_inputs){

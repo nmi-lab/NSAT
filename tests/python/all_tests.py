@@ -64,7 +64,6 @@ def all_tests():
     dir = os.getcwd() + test_dir
     test_list = [x for x in os.listdir(dir) if test_pattern.search(x)]
     print(test_list)
-    print('after list')
 
     name = "path"
     proc_list = []

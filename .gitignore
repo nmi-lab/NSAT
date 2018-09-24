@@ -4,3 +4,7 @@
 /.pydevproject
 /build/lib/*
 /dist
+/obj/
+/lib/
+/build/
+/pyNSATlib.egg-info/

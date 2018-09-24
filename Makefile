@@ -34,9 +34,9 @@ ifeq ($(MODE), DB)
 	# CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -I$(INCDIR)
 	# CFLAGS=-g -Wall -pedantic -fstack-protector-all -pg -I$(INCDIR)
 else ifeq ($(MODE), LB)
-	CFLAGS= -Ofast -ftree-vectorize -fPIC -flto -msse2 -march=native -mtune=native -I$(INCDIR)
+	CFLAGS= -Ofast -ftree-vectorize -fPIC -flto -msse2 -march=native -mtune=native -Wno-unused-result -I$(INCDIR)
 else
-	CFLAGS=-Ofast -ftree-vectorize -msse2 -pipe -march=native -mtune=native -flto -I$(INCDIR)
+	CFLAGS=-Ofast -ftree-vectorize -msse2 -pipe -march=native -mtune=native -flto -Wno-unused-result -I$(INCDIR)
 	# CFLAGS=-O2 -funroll-loops -flto -I$(INCDIR)
 endif
 

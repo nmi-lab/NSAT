@@ -11,10 +11,21 @@
 #----------------------------------------------------------------------------- 
 
 from setuptools import setup
+from setuptools.command.install import install as SetupInstall
+import subprocess
+
+class MyInstall(SetupInstall):
+	def run(self):
+		subprocess.call('make')
+		SetupInstall.run(self)
+
+class MakeClean(SetupInstall):
+	def run(self):
+		subprocess.call(['make','clean'])
 
 def readme():
-    with open('README.md') as f:
-        return f.read()
+	with open('README.md') as f:
+        	return f.read()
 
 setup(name='pyNSATlib',
       version='0.1',
@@ -30,4 +41,6 @@ setup(name='pyNSATlib',
                         'igraph',
                         'matplotlib'],
       dependency_links=['https://github.com/inincs/pyNCS/tarball/master#egg=package-1.0'],
-      zip_safe=False)
+      zip_safe=False,
+      cmdclass={'install': MyInstall,
+		'clean': MakeClean})

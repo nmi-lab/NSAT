@@ -95,22 +95,24 @@ class neuronConfig(BaseCoreConfig):
         self.synapse_cfg = synapse_cfg
         super(neuronConfig, self).__init__(name=name)
 
-    def gen_cfg(cfg):
-        n_states = cfg.n_states
-        rn_states = list(range(n_states))     # number of states per neuron
+    def gen_cfg(self,cfg):
+        self.n_states = cfg.n_states
+        self.rn_states = list(range(self.n_states))     # number of states per neuron
 
+        n = self.n_states
+        rn = self.rn_states
         # NSAT Dynamics parameters
-        cfg.A = np.array([[OFF] * n_states for _ in rn_states])
-        cfg.sA = np.array([[-1] * n_states for _ in rn_states])
-        cfg.b = np.array([0 for _ in rn_states])
+        cfg.A = np.array([[OFF] * n for _ in rn])
+        cfg.sA = np.array([[-1] * n for _ in rn])
+        cfg.b = np.array([0 for _ in rn])
 
         # Spike and reset parameters
-        cfg.XresetOn = np.array([True] + [False for _ in rn_states[:-1]])
-        cfg.Xreset = np.array([0 for _ in rn_states])
-        cfg.XspikeIncrVal = np.array([0 for _ in rn_states])
+        cfg.XresetOn = np.array([True] + [False for _ in rn[:-1]])
+        cfg.Xreset = np.array([0 for _ in rn])
+        cfg.XspikeIncrVal = np.array([0 for _ in rn])
         cfg.Xth = np.array(MAX)
-        cfg.Xthlo = np.array([MIN for _ in rn_states])
-        cfg.Xthup = np.array([MAX for _ in rn_states])
+        cfg.Xthlo = np.array([MIN for _ in rn])
+        cfg.Xthup = np.array([MAX for _ in rn])
         cfg.flagXth = np.array(False)
 
         # Neuron and Learning Maps
@@ -124,15 +126,15 @@ class neuronConfig(BaseCoreConfig):
         cfg.learn_burnin = np.array(0)
 
         # Blankout probability
-        cfg.prob_syn = np.array([15 for _ in rn_states])
+        cfg.prob_syn = np.array([15 for _ in rn])
 
         # Additive noise variance
-        cfg.sigma = np.array([0 for _ in rn_states])
+        cfg.sigma = np.array([0 for _ in rn])
 
         # Modulator state
         cfg.modstate = np.array(1)
 
-        cfg.Wgain = np.array([0 for _ in rn_states])
+        cfg.Wgain = np.array([0 for _ in rn])
 
         cfg.plasticity_type = None
 
@@ -159,6 +161,7 @@ class plasticityConfig(BaseCoreConfig):
         'is_rr_on',
         'rr_num_bits']
 
+    @staticmethod
     def gen_cfg(cfg):
         # Plasticity Parameters
         cfg.plastic = np.array(False)
