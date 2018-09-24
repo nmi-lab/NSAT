@@ -614,7 +614,7 @@ class ConfigurationNSAT(object):
     def readb(fh):
         """ Unpickles this object from the supplied binary file handle """
         try:
-            pickle.load(fh)
+            return pickle.load(fh)
         except:
             print("NSATlib:ConfigurationNSAT.readb(self,fh) failed to unpickle correctly")
             raise SystemExit
