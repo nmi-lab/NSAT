@@ -21,7 +21,7 @@ class MyInstall(SetupInstall):
 
 class MakeClean(SetupInstall):
 	def run(self):
-		subprocess.call(['make','clean'])
+		subprocess.call(['make','cleanall'])
 
 def readme():
 	with open('README.md') as f:

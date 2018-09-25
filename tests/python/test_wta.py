@@ -20,7 +20,8 @@ import timeit
 sim_ticks = 60000           # Simulation ticks
 SL = None
 t_start = 0
-t_stop = 25000
+#t_stop = 25000
+t_stop = sim_ticks
 
 def SimSpikingStimulus(rates=[5, 10], t_start=1000, t_stop=4000):
     n = np.shape(rates)[0]
@@ -228,7 +229,6 @@ def setup():
 
     # Set external events
     rates = [60, 30, 30]
-    t_start, t_stop = 1, 35000
     SL = SimSpikingStimulus(rates, t_start, t_stop)
     ext_evts_data = nsat.exportAER(SL)
     cfg.set_ext_events(ext_evts_data)
