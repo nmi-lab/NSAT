@@ -240,9 +240,12 @@ def run():
                           sim_ticks=sim_ticks,
                           id_list=list(range(cfg.core_cfgs[0].n_neurons)))
     
-    raster = spks.raster_plot()
-    raster.savefig('/tmp/%s_raster.png' % (os.path.splitext(os.path.basename(__file__))[0]))
-    raster.close()
+    try:
+        raster = spks.raster_plot()
+        raster.savefig('/tmp/%s_raster.png' % (os.path.splitext(os.path.basename(__file__))[0]))
+        raster.close()
+    except:
+        print('test_nf: Failed to generate /tmp/%s_raster.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     
     # Plot the results
 #     events = spks.convert()
@@ -252,8 +255,6 @@ def run():
 #     print(len(events[1]))
 #     mat[events[0].astype('i'), events[1].astype('i')] = 1
     
-
-
     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
     plt.close()
     print('End %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
