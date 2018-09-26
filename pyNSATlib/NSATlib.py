@@ -601,7 +601,7 @@ class ConfigurationNSAT(object):
                 # Only works for Python >3.4
                 _pickle.dump(self, fh, fix_imports=False)
             else:
-                pickle.dupp(self, fh)
+                pickle.dump(self, fh)
 # _pickle.dump(self, fh, protocol=_pickle.HIGHEST_PROTOCOL,
 # fix_imports=False) # Only works for Python >3.4
         except:
@@ -622,7 +622,7 @@ class ConfigurationNSAT(object):
                 return _pickle.load(fh, fix_imports=False)
             else:
                 # Only works for Python >3.4
-                return pickle.load(fh, fix_imports=False)
+                return pickle.load(fh)
         except:
             print("NSATlib:ConfigurationNSAT.readb(self,fh) failed to unpickle correctly")
             raise SystemExit
