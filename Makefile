@@ -34,9 +34,9 @@ ifeq ($(MODE), DB)
 	# CFLAGS=-g -Wall -Wextra -Wpedantic -fstack-protector-all -I$(INCDIR)
 	# CFLAGS=-g -Wall -pedantic -fstack-protector-all -pg -I$(INCDIR)
 else ifeq ($(MODE), LB)
-	CFLAGS= -Ofast -ftree-vectorize -fPIC -flto -msse2 -march=native -mtune=native -I$(INCDIR)
+	CFLAGS= -Ofast -ftree-vectorize -fPIC -flto -msse2 -march=native -mtune=native -Wno-unused-result -I$(INCDIR)
 else
-	CFLAGS=-Ofast -ftree-vectorize -msse2 -pipe -march=native -mtune=native -flto -I$(INCDIR)
+	CFLAGS=-Ofast -ftree-vectorize -msse2 -pipe -march=native -mtune=native -flto -Wno-unused-result -I$(INCDIR)
 	# CFLAGS=-O2 -funroll-loops -flto -I$(INCDIR)
 endif
 
@@ -69,27 +69,20 @@ $(OBJECTS): $(OBJDIR)/%.o : $(SRCDIR)/%.c
 $(DEMOOBJ): $(OBJDIR)/%.o : $(DEMODIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@ $(LDFLAGS)
 
-
 $(LIBDIR)/$(LTARGET): $(OBJECTS)
 	$(CC) -shared -o $@ $^ $(LDFLAGS)
 
-.PHONY: clean cleanall
+.PHONY: clean cleanall cleanpyc
 
+cleanpyc:
+	@find . -name "*.pyc" -delete
 
-clean:
+clean: cleanpyc
 	rm -rf $(OBJDIR)	\
 	rm -f *~ core $(INCDIR)/*~  \
 	rm -f $(LIBDIR)/*.so \
 	rm -f $(BINDIR)/* \
-	rm -f $(PYTHON)/*.pyc
 
-cleanall:
-	rm -rf $(OBJDIR)	\
-	rm -f *~ core $(INCDIR)/*~  \
-	rm -f $(LIBDIR)/*.so \
-	rm -f $(BINDIR)/* \
-	rm -f $(DATADIR)/* \
-	rm -f $(PYTHON)/*.pyc \
-	rm -f $(DEMODIR)/*.pyc \
-	rm -rf $(EXPDIR)/*.pyc
+cleanall: clean
+	rm -f $(DATADIR)/*
 

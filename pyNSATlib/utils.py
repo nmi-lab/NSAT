@@ -15,6 +15,8 @@ import pylab
 import numpy as np
 import pyNSATlib.NSATlib as nsat
 from pyNSATlib.global_vars import *
+from pyNCSre import pyST
+from pyNSATlib.nsat_reader import C_NSATReader, read_from_file
 
 
 def latex_vector_print(var, prefix='W'):
@@ -164,30 +166,53 @@ def plot_stdp_kernel(fname, tca=[16, 36], tac=[16, 36]):
 
 def generate_wgt_stats(cfg, fname, W, CW):
     self = cfg
-    extW = NSATlib._extract_submatrix(W,
+#     extW = NSATlib._extract_submatrix(W,
+#                                       start_row=0,
+#                                       end_row=self.N_INPUTS,
+#                                       start_col=self.N_INPUTS,
+#                                       end_col=self.N_UNITS)
+# 
+#     extCW = NSATlib._extract_submatrix(CW,
+#                                        start_row=0,
+#                                        end_row=self.N_INPUTS,
+#                                        start_col=self.N_INPUTS,
+#                                        end_col=self.N_UNITS)
+# 
+#     recW = NSATlib._extract_submatrix(W,
+#                                       start_row=self.N_INPUTS,
+#                                       end_row=self.N_UNITS,
+#                                       start_col=self.N_INPUTS,
+#                                       end_col=self.N_UNITS)
+# 
+#     recCW = NSATlib._extract_submatrix(CW,
+#                                        start_row=self.N_INPUTS,
+#                                        end_row=self.N_UNITS,
+#                                        start_col=self.N_INPUTS,
+#                                        end_col=self.N_UNITS)
+    extW = nsat._extract_submatrix(W,
                                       start_row=0,
                                       end_row=self.N_INPUTS,
                                       start_col=self.N_INPUTS,
                                       end_col=self.N_UNITS)
 
-    extCW = NSATlib._extract_submatrix(CW,
+    extCW = nsat._extract_submatrix(CW,
                                        start_row=0,
                                        end_row=self.N_INPUTS,
                                        start_col=self.N_INPUTS,
                                        end_col=self.N_UNITS)
 
-    recW = NSATlib._extract_submatrix(W,
+    recW = nsat._extract_submatrix(W,
                                       start_row=self.N_INPUTS,
                                       end_row=self.N_UNITS,
                                       start_col=self.N_INPUTS,
                                       end_col=self.N_UNITS)
 
-    recCW = NSATlib._extract_submatrix(CW,
+    recCW = nsat._extract_submatrix(CW,
                                        start_row=self.N_INPUTS,
                                        end_row=self.N_UNITS,
                                        start_col=self.N_INPUTS,
                                        end_col=self.N_UNITS)
-
+    
     ext_arr = np.loadtxt(fname.stats_ext + '0.dat', 'int')
 
     if len(ext_arr) > 0:
@@ -294,7 +319,7 @@ def copy_final_weights(fname):
 
 
 def import_c_nsat_events(fname_train):
-    f = nsat.read_from_file(fname_train.events + '_core_0.dat')
+    f = read_from_file(fname_train.events + '_core_0.dat')
     i = 0
     tmad = []
     while i < len(f):

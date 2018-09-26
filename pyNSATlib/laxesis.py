@@ -19,7 +19,7 @@
 
 import numpy as np
 from pyNCSre import pyST
-from .laxesis_neurontypes import *
+from laxesis_neurontypes import *
 import pyNSATlib as nsat
 from pyNSATlib.NSATlib import check_weight_matrix, coreConfig, ConfigurationNSAT
 from pyNSATlib.utils import gen_ptr_wgt_table_from_W_CW
@@ -226,7 +226,7 @@ class Population(object):
 
     def partition(self, nparts=1):
         pop_list = []
-        assert self.n // nparts == int(self.n / parts)
+        assert self.n // nparts == int(self.n / nparts)
         for i in range(nparts):
             pop_list.append(Population(name=self.name + '_part{0}'.format(i),
                                        n=self.n // nparts,
@@ -346,7 +346,7 @@ def connect_random_uniform(low, high, prob=1.):
         nsrc = len(src_pop)
         ndst = len(tgt_pop)
         if prob < 1:
-            CW = np.random.randn(nsrc, ndst) < p
+            CW = np.random.randn(nsrc, ndst) < prob
         else:
             CW = np.ones([nsrc, ndst], 'bool')
         W = np.zeros([nsrc, ndst], 'int')
@@ -382,20 +382,20 @@ def connect_conv2dbank(imsize, nchannels, nfeatures, stride, ksize, **kwargs):
     return func
 
 
-def connect_loccon2dbank(imsize, nchannels, nfeatures, stride, ksize):
-    '''
-    Consider separating
-    '''
-    def func(src_pop, tgt_pop):
-        nsrc = len(src_pop)
-        ndst = len(tgt_pop)
-        W, CW = gen_filterbank(loccon2d, nchannels,
-                               nfeatures, imsize=imsize, ksize=ksize)
-        assert nsrc == ptr_table.shape[0]
-        assert ndst == ptr_table.shape[1]
-        p, w = connections_dense_to_sparse_nonshared(W, CW)
-        return p, w
-    return func
+# def connect_loccon2dbank(imsize, nchannels, nfeatures, stride, ksize):
+#     '''
+#     Consider separating
+#     '''
+#     def func(src_pop, tgt_pop):
+#         nsrc = len(src_pop)
+#         ndst = len(tgt_pop)
+#         W, CW = gen_filterbank(loccon2d, nchannels,
+#                                nfeatures, imsize=imsize, ksize=ksize)
+#         assert nsrc == ptr_table.shape[0]
+#         assert ndst == ptr_table.shape[1]
+#         p, w = connections_dense_to_sparse_nonshared(W, CW)
+#         return p, w
+#     return func
 
 
 class Connection(object):
@@ -477,7 +477,7 @@ class Connection(object):
 
 
 class Graph(igraph.Graph):
-
+    
     def add_vertex_and_return(self, name=None, **kwds):
         """add_vertex_return(name=None, **kwds)
 
@@ -711,7 +711,7 @@ class NSATSetup(MulticoreResourceManager):
         n_units = n_neurons + n_inputs
         n_states = self.normalize_n_states(core)
         core_cfg = coreConfig(n_states, n_neurons, n_inputs)
-
+        
         list_ntypes = [self.ntypes[core][v] for v in self.ntypes_order[core]]
 
         for p in neuronConfig.parameter_names:
@@ -748,6 +748,7 @@ class NSATSetup(MulticoreResourceManager):
 
         return core_cfg
 
+    @staticmethod
     def create_configuration_nsat(setup, sim_ticks, **kwargs):
         # TODO: fold following in NSATSetup
         cfg = ConfigurationNSAT(
