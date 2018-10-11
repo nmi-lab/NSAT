@@ -65,14 +65,14 @@ def find_nsat_library():
 #     return flag
 
 
-def run_c_nsat():
+def run_c_nsat(fname):
     #     from ctypes import POINTER, cdll, c_int
     #     from global_vars import c_nsat_fnames
 
     _nsat = cdll.LoadLibrary(find_nsat_library())
 
     # handle = _nsat._handle
-    c_fnames = c_nsat_fnames(fname=fnames)
+    c_fnames = c_nsat_fnames(fname=fname)
     _nsat.iterate_nsat.argtypes = (POINTER(c_nsat_fnames),)
     _nsat.iterate_nsat.restype = c_int
 

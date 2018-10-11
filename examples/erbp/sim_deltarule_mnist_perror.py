@@ -20,9 +20,14 @@ import time
 import sys
 import copy
 import os
-DATA_DIR = './data'
+# DATA_DIR = '../data/mnist'
+# TMP_DIR = '../tmp/'
+DATA_DIR = '/shares/data/mnist/'
+TMP_DIR = '/tmp/'
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
+if not os.path.exists(TMP_DIR):
+    os.makedirs(TMP_DIR)
 sys.path.append(DATA_DIR)
 
 import mnist
@@ -121,22 +126,24 @@ exp_name = 'eta' + str(eta) + '_sig' + str(sig) + '_inputfact' + \
     str(inp_fact) + '_inith' + str(inith) + '_wgg' + str(wgg)
 exp_name_test = 'test_eta' + str(eta) + '_sig' + str(sig) + '_inputfact' + str(
     inp_fact) + '_inith' + str(inith) + '_wgg' + str(wgg)
+    
 
 data_train, targets_train = mnist.load_mnist(
-    '/shares/data/mnist/train-images-idx3-ubyte',
-    '/shares/data/mnist/train-labels-idx1-ubyte',
+    DATA_DIR + 'train-images-idx3-ubyte',
+    DATA_DIR + 'train-labels-idx1-ubyte',
     50000, with_labels=True)
 data_classify, targets_classify = mnist.load_mnist(
-    '/shares/data/mnist/t10k-images-idx3-ubyte',
-    '/shares/data/mnist/t10k-labels-idx1-ubyte',
+    DATA_DIR + 't10k-images-idx3-ubyte',
+    DATA_DIR + 't10k-labels-idx1-ubyte',
     10000, with_labels=False)
+
 
 np.random.seed(100)
 
 ###########################################################################
 print("###################### Train Stimulus Creation ##################################")
 sim_ticks = N_train * t_sample_train
-idx = range(len(data_train))
+idx = list(range(len(data_train)))
 np.random.shuffle(idx)
 idx = idx[:N_train]
 data_train = np.concatenate([data_train[idx, :] for _ in range(n_mult)])
@@ -347,11 +354,11 @@ cfg_test.set_ext_events(ext_evts_data_test)
 
 print("################## Writing Parameters Files ##################")
 c_nsat_writer_train = nsat.C_NSATWriter(
-    cfg_train, path='/tmp/erbp_mnist_train1/', prefix='')
+    cfg_train, path=TMP_DIR + 'erbp_mnist_train1/', prefix='')
 c_nsat_writer_train.write()
 
 c_nsat_writer_test = nsat.C_NSATWriter(
-    cfg_test, path='/tmp/erbp_mnist_test1/', prefix='')
+    cfg_test, path=TMP_DIR + 'erbp_mnist_test1/', prefix='')
 c_nsat_writer_test.write()
 
 fname_train = c_nsat_writer_train.fname
@@ -380,8 +387,8 @@ for i in range(nepochs):
             pip .append([i, float(sum(np.argmax(test_spikelist.id_slice(range(
                 sP, sP + Np)).firing_rate(t_sample_test).T, axis=1) == targets_classify[:N_test])) / N_test * 100])
 
-            print exp_name
-            print pip
+            print(exp_name)
+            print(pip)
     copyfile(fname_train.shared_mem + '_core_0.dat',
              fname_train.syn_wgt_table + '_core_0.dat',)
 
