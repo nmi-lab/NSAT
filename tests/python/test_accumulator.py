@@ -137,13 +137,14 @@ def setup():
 #     plt.savefig('/tmp/%s.png' % (os.path.splitext(os.path.basename(__file__))[0]))
 #     plt.close()
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
 
 if __name__ == '__main__':
     print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = timeit.default_timer()
     
-    setup()
+    fname = setup()
 #      run(filenames)
     print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))    
     

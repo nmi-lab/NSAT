@@ -107,16 +107,17 @@ def setup():
     build_davis_file("/tmp/test_davis_davis_events", num_ticks=sim_ticks)
 
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
 
 
-def run():
+def run(fnames):
     # Call the C NSAT
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
-    nsat.run_c_nsat()
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     _, states_core0 = states[0][0], states[0][1]
     _, states_core1 = states[1][0], states[1][1]
@@ -153,8 +154,8 @@ if __name__ == '__main__':
           (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = timeit.default_timer()
 
-    setup()
-    run()
+    fname = setup()
+    run(fname)
 
     print("End %s:main() , running time: %f seconds" % (os.path.splitext(
         os.path.basename(__file__))[0], timeit.default_timer() - start_t))
