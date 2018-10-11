@@ -101,4 +101,4 @@ class nsat_fnames(object):
         fname.pickled = path + '_pickled_config'
         return fname
 
-fnames = nsat_fnames()
+#fnames = nsat_fnames()

@@ -79,16 +79,17 @@ def setup():
     c_nsat_writer.write()
     
     print('End %s:setup()' % (os.path.splitext(os.path.basename(__file__))[0]))
+    return c_nsat_writer.fname
  
 
-def run():
+def run(fnames):
     # Call the C NSAT
     print('Begin %s:run()' % (os.path.splitext(os.path.basename(__file__))[0]))
-    cfg = nsat.ConfigurationNSAT.readfileb(nsat.fnames.pickled)
-    nsat.run_c_nsat()
+    cfg = nsat.ConfigurationNSAT.readfileb(fnames.pickled)
+    nsat.run_c_nsat(fnames)
 
     # Load the results (read binary files)
-    c_nsat_reader = nsat.C_NSATReader(cfg, nsat.fnames)
+    c_nsat_reader = nsat.C_NSATReader(cfg, fnames)
     states = c_nsat_reader.read_c_nsat_states()
     time_core0, states_core0 = states[0][0], states[0][1]
 
@@ -107,8 +108,8 @@ if __name__ == '__main__':
     print('Begin %s:main()' % (os.path.splitext(os.path.basename(__file__))[0]))
     start_t = timeit.default_timer()
     
-    setup()
-    run()
+    fname = setup()
+    run(fname)
     
     print("End %s:main() , running time: %f seconds" % (os.path.splitext(os.path.basename(__file__))[0], timeit.default_timer()-start_t))
  
