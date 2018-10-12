@@ -17,7 +17,7 @@ import os
 import timeit
 
 # Globals
-sim_ticks = 60000           # Simulation ticks
+sim_ticks = 5000           # Simulation ticks
 SL = None
 t_start = 0
 #t_stop = 25000

@@ -18,7 +18,7 @@ import timeit
 import pyNSATlib
 from pyNSATlib.utils import *
 from pyNSATlib.global_vars import *
-import path
+# import path
 
 
 def pack(data, typ='i'):

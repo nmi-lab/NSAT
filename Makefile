@@ -81,7 +81,7 @@ clean: cleanpyc
 	rm -rf $(OBJDIR)	\
 	rm -f *~ core $(INCDIR)/*~  \
 	rm -f $(LIBDIR)/*.so \
-	rm -f $(BINDIR)/* \
+	rm -f $(BINDIR)/*
 
 cleanall: clean
 	rm -f $(DATADIR)/*

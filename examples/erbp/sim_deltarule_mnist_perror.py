@@ -96,13 +96,13 @@ N_CORES = 1
 N_NEURONS = Nh + Ng1 + Ng2 + Ng3 + Np
 
 n_mult = 1
-N_train = 5000
-N_test = 1000
+N_train = 50
+N_test = 10
 N_INPUTS = Nv + Nl
 N_STATES = 4
 N_GROUPS = 8
-t_sample_test = 3000
-t_sample_train = 1500
+t_sample_test = 30
+t_sample_train = 15
 nepochs = 50
 test_every = 10
 
