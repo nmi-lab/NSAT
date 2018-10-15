@@ -451,7 +451,6 @@ void read_monitor_params(FILE *fp, nsat_core *cores, int num_cores) {
 
     for (p = 0; p < num_cores; ++p) {
         fread(&cores[p].mon_pms->mon_states, sizeof(bool), 1, fp);
-        printf("nsat_params_ops:read_monitor_params() core %d monitor state is %d\n", p, (int)(cores[p].mon_pms->mon_states));
         fread(&cores[p].mon_pms->mon_weights, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_final_weights, sizeof(bool), 1, fp);
         fread(&cores[p].mon_pms->mon_spikes, sizeof(bool), 1, fp);

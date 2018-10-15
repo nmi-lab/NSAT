@@ -96,13 +96,13 @@ N_CORES = 1
 N_NEURONS = Nh + Ng1 + Ng2 + Ng3 + Np
 
 n_mult = 1
-N_train = 50
-N_test = 10
+N_train = 2000
+N_test = 1000
 N_INPUTS = Nv + Nl
 N_STATES = 4
 N_GROUPS = 8
-t_sample_test = 30
-t_sample_train = 15
+t_sample_test = 2000
+t_sample_train = 1000
 nepochs = 50
 test_every = 10
 
@@ -381,7 +381,7 @@ for i in range(nepochs):
     if test_every > 0:
         if i % test_every == test_every - 1:
             nsat.run_c_nsat(fname_test)
-            test_spikelist = nsat.importAER(c_nsat_reader_test.read_c_nsat_raw_events()[0],
+            test_spikelist = nsat.importAER(c_nsat_reader_test.read_events(0),
                                             sim_ticks=sim_ticks_test,
                                             id_list=np.arange(sP, sP + Np))
             pip .append([i, float(sum(np.argmax(test_spikelist.id_slice(range(
